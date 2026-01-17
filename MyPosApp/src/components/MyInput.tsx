@@ -1,41 +1,23 @@
-import React from 'react';
-import { TextInput, View, Text } from 'react-native';
-// @ts-ignore
-import { styled } from 'nativewind';
+import React, {act } from 'react';
+import { TextInput, View, Text, TextInputProps } from 'react-native';
 
-const StyledInput = styled(TextInput);
-const StyledView = styled(View);
-const StyledText = styled(Text);
-
-interface MyInputProps {
+interface MyInputProps extends TextInputProps {
     label: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    placeholder?: string;
-    secureTextEntry?: boolean;
-    keyboardType?: 'default' | 'numeric' | 'email-address';
 }
 
 export const MyInput: React.FC<MyInputProps> = ({
                                                     label,
-                                                    value,
-                                                    onChangeText,
-                                                    placeholder,
-                                                    secureTextEntry,
-                                                    keyboardType = 'default'
+                                                    className,
+                                                    ...props
                                                 }) => {
     return (
-        <StyledView className="my-2">
-            <StyledText className="text-gray-700 font-semibold mb-2">{label}</StyledText>
-            <StyledInput
+        <View className="my-2">
+            <Text className="text-gray-700 font-semibold mb-2">{label}</Text>
+            <TextInput
                 className="bg-white border border-gray-300 rounded-xl p-4 text-gray-800"
-                value={value}
-                onChangeText={onChangeText}
-                placeholder={placeholder}
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
                 placeholderTextColor="#94a3b8"
+                {...props}
             />
-        </StyledView>
+        </View>
     );
 };

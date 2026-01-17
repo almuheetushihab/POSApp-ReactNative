@@ -1,10 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
-// @ts-ignore
-import {styled} from "nativewind";
-
-const StyledButton = styled(TouchableOpacity);
-const StyledText = styled(Text);
 
 interface MyButtonProps {
     title: string;
@@ -20,18 +15,18 @@ export const MyButton: React.FC<MyButtonProps> = ({
                                                       isLoading = false
                                                   }) => {
 
-    let bgClass = 'bg-primary';
+    let bgClass = 'bg-blue-600';
     let textClass = 'text-white';
 
-    if (variant === 'secondary') bgClass = 'bg-secondary';
-    if (variant === 'danger') bgClass = 'bg-danger';
+    if (variant === 'secondary') bgClass = 'bg-slate-800';
+    if (variant === 'danger') bgClass = 'bg-red-500';
     if (variant === 'outline') {
-        bgClass = 'bg-transparent border border-primary';
-        textClass = 'text-primary';
+        bgClass = 'bg-transparent border border-blue-600';
+        textClass = 'text-blue-600';
     }
 
     return (
-        <StyledButton
+        <TouchableOpacity
             onPress={onPress}
             className={`p-4 rounded-xl items-center justify-center ${bgClass} active:opacity-80 my-2`}
             disabled={isLoading}
@@ -39,10 +34,10 @@ export const MyButton: React.FC<MyButtonProps> = ({
             {isLoading ? (
                 <ActivityIndicator color="white" />
             ) : (
-                <StyledText className={`font-bold text-lg ${textClass}`}>
+                <Text className={`font-bold text-lg ${textClass}`}>
                     {title}
-                </StyledText>
+                </Text>
             )}
-        </StyledButton>
+        </TouchableOpacity>
     );
 };
