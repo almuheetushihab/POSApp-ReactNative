@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MyInput } from '../../components/MyInput';
-import { MyButton } from '../../components/MyButton';
+import React, {useState} from 'react';
+import {View, Text, Alert} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {MyInput} from '../../components/MyInput';
+import {MyButton} from '../../components/MyButton';
+import {useRouter} from "expo-router";
 
 export const LoginScreen = () => {
+    const router = useRouter();
     const [pin, setPin] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -19,7 +21,7 @@ export const LoginScreen = () => {
         setTimeout(() => {
             setIsLoading(false);
             if (pin === '1234') {
-                Alert.alert('Success', 'Welcome to POS System!');
+                router.replace('/dashboard');
             } else {
                 Alert.alert('Failed', 'Wrong PIN Code. Try 1234');
             }

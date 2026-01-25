@@ -1,8 +1,14 @@
 import React from 'react';
 import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import {useRouter} from "expo-router";
 
-export const DashboardScreen = ({navigation}: any) => {
+export const DashboardScreen = () => {
+    const router = useRouter();
+
+    const handleLogout = () => {
+        router.replace('/');
+    };
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
             <ScrollView contentContainerStyle={{padding: 20}}>
@@ -75,7 +81,7 @@ export const DashboardScreen = ({navigation}: any) => {
                 </View>
 
                 <TouchableOpacity
-                    onPress={() => navigation.replace('Login')}
+                    onPress={handleLogout}
                     className="bg-gray-200 p-4 rounded-xl items-center mt-4 active:opacity-70"
                 >
                     <Text className="font-bold text-slate-600">Log Out</Text>
