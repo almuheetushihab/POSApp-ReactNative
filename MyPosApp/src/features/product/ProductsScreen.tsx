@@ -6,10 +6,12 @@ import {useTranslation} from 'react-i18next';
 import {ProductCard} from "../../components/ProductCard";
 import {useProductStore} from "../../store/useProductStore";
 import {Product} from "../../types/product";
+import {useRouter} from "expo-router";
 
 const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
 export default function ProductsScreen() {
+    const router = useRouter();
     const {t} = useTranslation();
 
     const {
@@ -26,7 +28,17 @@ export default function ProductsScreen() {
     }, []);
 
     const handleProductPress = (item: Product) => {
-        console.log('Product Clicked:', item.name);
+        router.push({
+            pathname: '/productdetails',
+            params: {
+                id: item.id,
+                name: item.name,
+                price: item.price.toString(),
+                stock: item.stock.toString(),
+                image: item.image,
+                category: item.category
+            }
+        });
     };
 
     return (

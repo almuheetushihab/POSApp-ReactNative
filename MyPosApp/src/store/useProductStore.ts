@@ -1,6 +1,6 @@
-import {create} from 'zustand';
-import {Product} from '../types/product';
-import {productService} from '../services/productService';
+import { create } from 'zustand';
+import { Product } from '../types/product';
+import { productService } from '../services/productService';
 
 interface ProductState {
     products: Product[];
@@ -13,6 +13,8 @@ interface ProductState {
     fetchProducts: () => Promise<void>;
     filterByCategory: (category: string) => void;
     searchProducts: (query: string) => void;
+    updateProduct: (updatedProduct: Product) => void;
+    deleteProduct: (productId: string) => void;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -67,5 +69,27 @@ export const useProductStore = create<ProductState>((set, get) => ({
         }
 
         set({filteredProducts: result});
+    },
+
+    updateProduct: (updatedProduct) => {
+        set((state) => {
+            const newProducts = state.products.map((p) =>
+                p.id === updatedProduct.id ? updatedProduct : p
+            );
+
+            const newFiltered = state.filteredProducts.map((p) =>
+                p.id === updatedProduct.id ? updatedProduct : p
+            );
+
+            return { products: newProducts, filteredProducts: newFiltered };
+        });
+    },
+
+    deleteProduct: (productId) => {
+        set((state) => {
+            const newProducts = state.products.filter((p) => p.id !== productId);
+            const newFiltered = state.filteredProducts.filter((p) => p.id !== productId);
+            return { products: newProducts, filteredProducts: newFiltered };
+        });
     }
 }));
