@@ -1,0 +1,11 @@
+{
+  "welcome": "Welcome Back",
+  "login": "Login to System",
+  "dashboard": "Dashboard",
+  "settings": "Settings",
+  "language": "Language",
+  "theme": "Theme",
+  "dark_mode": "Dark Mode",
+  "light_mode": "Light Mode",
+  "system": "System Default"
+}
