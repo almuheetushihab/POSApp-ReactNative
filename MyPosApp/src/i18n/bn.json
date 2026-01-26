@@ -25,5 +25,7 @@
   "nav_home": "হোম",
   "nav_sale": "বিক্রয়",
   "nav_items": "আইটেম",
-  "nav_settings": "সেটিংস"
+  "nav_settings": "সেটিংস",
+  "products_title": "পণ্য তালিকা",
+  "search_placeholder": "নাম দিয়ে খুঁজুন..."
 }

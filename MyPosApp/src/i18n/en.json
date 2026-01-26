@@ -25,5 +25,7 @@
   "nav_home": "Home",
   "nav_sale": "Sale",
   "nav_items": "Items",
-  "nav_settings": "Settings"
+  "nav_settings": "Settings",
+  "products_title": "Inventory Items",
+  "search_placeholder": "Search by name..."
 }
