@@ -3,10 +3,10 @@ module.exports = function (api) {
     return {
         presets: [
             ["babel-preset-expo", { jsxImportSource: "nativewind" }],
-            "nativewind/babel",
+            "nativewind/babel", // <--- এটি অবশ্যই presets এর ভেতর থাকবে
         ],
         plugins: [
-            "react-native-reanimated/plugin",
+            "react-native-reanimated/plugin", // <--- এটি plugins এর ভেতর থাকবে
         ],
     };
 };
