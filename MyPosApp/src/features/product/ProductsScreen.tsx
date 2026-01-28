@@ -19,6 +19,7 @@ import {ProductCard} from "../../components/ProductCard";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
 import {Product} from "../../types/product";
+import {AddProductModal} from "../../components/AddProductModal";
 
 const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
@@ -50,7 +51,7 @@ export default function ProductsScreen() {
     useEffect(() => {
         fetchProducts();
     }, []);
-
+    const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
         return item ? item.quantity : 0;
@@ -150,6 +151,18 @@ export default function ProductsScreen() {
                     }
                 />
             )}
+
+            <TouchableOpacity
+                onPress={() => setIsAddModalVisible(true)}
+                className="absolute bottom-6 right-6 bg-blue-600 h-14 w-14 rounded-full items-center justify-center shadow-lg shadow-blue-400 z-50"
+            >
+                <Ionicons name="add" size={30} color="white"/>
+            </TouchableOpacity>
+
+            <AddProductModal
+                visible={isAddModalVisible}
+                onClose={() => setIsAddModalVisible(false)}
+            />
 
             {cart.length > 0 && (
                 <TouchableOpacity
