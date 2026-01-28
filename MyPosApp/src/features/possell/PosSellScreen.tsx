@@ -14,7 +14,14 @@ import {ScannerModal} from "../../components/ScannerModal";
 
 export default function POSScreen() {
     const {t} = useTranslation();
-    const {filteredProducts, fetchProducts, activeCategory, filterByCategory, products} = useProductStore();
+    const {
+        filteredProducts,
+        fetchProducts,
+        activeCategory,
+        filterByCategory,
+        products,
+        reduceStock
+    } = useProductStore();
     const {
         cart,
         addToCart,
@@ -62,10 +69,9 @@ export default function POSScreen() {
         return product ? {...cartItem, ...product} : cartItem;
     };
 
-    // 🔥 Checkout Function
     const handleCheckout = () => {
         if (cart.length === 0) return;
-
+        reduceStock(cart);
         const newOrder: Order = {
             id: Date.now().toString(),
             items: cart,
@@ -130,7 +136,12 @@ export default function POSScreen() {
                 numColumns={2}
                 contentContainerStyle={{padding: 10, paddingBottom: 100}}
                 renderItem={({item}) => (
-                    <ProductCard product={item} onPress={addToCart} quantity={getItemQuantity(item.id)}/>
+                    <ProductCard
+                        product={item}
+                        onAdd={() => addToCart(item)}
+                        onRemove={() => decreaseQuantity(item.id)}
+                        quantity={getItemQuantity(item.id)
+                        }/>
                 )}
                 ListEmptyComponent={
                     <View className="flex-1 justify-center items-center mt-20">
@@ -226,7 +237,6 @@ export default function POSScreen() {
                 </View>
             </Modal>
 
-            {/* Success Receipt Modal */}
             <OrderSuccessModal
                 visible={showSuccessModal}
                 order={lastOrder}
@@ -238,7 +248,6 @@ export default function POSScreen() {
                 onClose={() => setIsScannerVisible(false)}
                 onScan={handleScan}
             />
-
         </SafeAreaView>
     );
 }
