@@ -7,6 +7,7 @@ import {useTranslation} from "react-i18next";
 import {Ionicons} from "@expo/vector-icons";
 import {useOrderStore} from "../../store/useOrderStore";
 import {useProductStore} from "../../store/useProductStore";
+import {SalesChart} from "../../components/SalesChart";
 
 export const DashboardScreen = () => {
     const router = useRouter();
@@ -44,7 +45,6 @@ export const DashboardScreen = () => {
                 }
             >
 
-                {/* Header Section */}
                 <View className="flex-row justify-between items-center mb-6">
                     <View>
                         <Text className="text-2xl font-bold text-slate-800 dark:text-white">
@@ -60,10 +60,7 @@ export const DashboardScreen = () => {
                     </View>
                 </View>
 
-                {/* Stats Cards (REAL DATA) */}
                 <View className="flex-row flex-wrap justify-between mb-6">
-
-                    {/* 1. Total Sales Today */}
                     <View className="bg-blue-600 w-[48%] p-4 rounded-2xl mb-4 shadow-sm">
                         <View className="bg-blue-500/30 h-8 w-8 rounded-full items-center justify-center mb-2">
                             <Ionicons name="cash-outline" size={18} color="white"/>
@@ -73,7 +70,6 @@ export const DashboardScreen = () => {
                         <Text className="text-white text-2xl font-bold mt-1">৳ {getTodaySales()}</Text>
                     </View>
 
-                    {/* 2. Total Orders (All Time) */}
                     <View className="bg-orange-500 w-[48%] p-4 rounded-2xl mb-4 shadow-sm">
                         <View className="bg-orange-400/30 h-8 w-8 rounded-full items-center justify-center mb-2">
                             <Ionicons name="receipt-outline" size={18} color="white"/>
@@ -105,6 +101,7 @@ export const DashboardScreen = () => {
                     </View>
                 </View>
 
+                <SalesChart/>
                 {/* Quick Actions */}
                 <Text className="text-xl font-bold text-slate-800 dark:text-white mb-4">
                     {t('quick_actions')}
