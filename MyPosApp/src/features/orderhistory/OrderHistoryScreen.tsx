@@ -4,6 +4,7 @@ import {Order} from "../../types/order";
 import {FlatList, Text, TouchableOpacity, View} from "react-native";
 import {Ionicons} from "@expo/vector-icons";
 import {SafeAreaView} from "react-native-safe-area-context";
+import {pdfService} from "../../services/pdfService";
 
 
 export default function OrderHistoryScreen() {
@@ -22,7 +23,17 @@ export default function OrderHistoryScreen() {
                         <Text className="text-slate-500 text-xs">{new Date(item.date).toDateString()}</Text>
                     </View>
                 </View>
-                <Text className="text-green-600 font-bold text-lg">৳ {item.totalAmount}</Text>
+
+                <View className="flex-row items-center gap-3">
+                    <Text className="text-green-600 font-bold text-lg">৳ {item.totalAmount}</Text>
+
+                    <TouchableOpacity
+                        onPress={() => pdfService.printOrder(item)}
+                        className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full active:bg-blue-100"
+                    >
+                        <Ionicons name="print-outline" size={20} color="#2563eb" />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View className="bg-gray-50 dark:bg-slate-800 p-3 rounded-lg mt-2">

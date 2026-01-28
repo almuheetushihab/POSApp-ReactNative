@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order } from '../types/order';
+import {pdfService} from "../services/pdfService";
 
 interface OrderSuccessModalProps {
     visible: boolean;
@@ -11,7 +12,11 @@ interface OrderSuccessModalProps {
 
 export const OrderSuccessModal = ({ visible, order, onClose }: OrderSuccessModalProps) => {
     if (!order) return null;
-
+    const handlePrint = async () => {
+        if (order) {
+            await pdfService.printOrder(order);
+        }
+    };
     return (
         <Modal visible={visible} transparent animationType="fade">
             <View className="flex-1 bg-black/60 justify-center items-center p-5">
@@ -58,10 +63,21 @@ export const OrderSuccessModal = ({ visible, order, onClose }: OrderSuccessModal
                     </ScrollView>
 
                     {/* Footer Button */}
-                    <View className="p-5 border-t border-gray-100">
+                    <View className="p-5 border-t border-gray-100 dark:border-slate-800 flex-row gap-3">
+
+                        {/* Print Button */}
+                        <TouchableOpacity
+                            onPress={handlePrint}
+                            className="flex-1 bg-gray-100 dark:bg-slate-800 p-4 rounded-xl items-center flex-row justify-center gap-2"
+                        >
+                            <Ionicons name="print-outline" size={20} color="#334155" />
+                            <Text className="text-slate-700 dark:text-slate-300 font-bold text-lg">Print</Text>
+                        </TouchableOpacity>
+
+                        {/* Close Button */}
                         <TouchableOpacity
                             onPress={onClose}
-                            className="bg-slate-900 p-4 rounded-xl items-center"
+                            className="flex-1 bg-blue-600 p-4 rounded-xl items-center"
                         >
                             <Text className="text-white font-bold text-lg">New Sale</Text>
                         </TouchableOpacity>
