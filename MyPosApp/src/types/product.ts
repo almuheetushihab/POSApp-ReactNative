@@ -5,6 +5,7 @@ export interface Product {
     category: string;
     image?: string;
     stock: number;
+    barcode?: string;
 }
 
 export interface ProductResponse {

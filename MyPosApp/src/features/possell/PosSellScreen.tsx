@@ -3,13 +3,14 @@ import {useOrderStore} from "../../store/useOrderStore";
 import {useCallback, useState} from "react";
 import {useFocusEffect} from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View} from "react-native";
+import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
 import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
 import {Order} from "../../types/order";
+import {ScannerModal} from "../../components/ScannerModal";
 
 export default function POSScreen() {
     const {t} = useTranslation();
@@ -23,9 +24,10 @@ export default function POSScreen() {
         getTotalItems,
         clearCart
     } = useCartStore();
-    const {addOrder} = useOrderStore(); // <--- Order Store ব্যবহার
+    const {addOrder} = useOrderStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
+    const [isScannerVisible, setIsScannerVisible] = useState(false);
 
     // Receipt Modal States
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -36,6 +38,17 @@ export default function POSScreen() {
             // Screen refresh logic if needed
         }, [])
     );
+
+    const handleScan = (scannedCode: string) => {
+        const product = products.find(p => p.barcode === scannedCode);
+
+        if (product) {
+            addToCart(product);
+            Alert.alert("Success", `${product.name} added to cart!`);
+        } else {
+            Alert.alert("Not Found", "No product found with this barcode.");
+        }
+    };
 
     const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
@@ -53,9 +66,8 @@ export default function POSScreen() {
     const handleCheckout = () => {
         if (cart.length === 0) return;
 
-        // ১. নতুন অর্ডার অবজেক্ট তৈরি
         const newOrder: Order = {
-            id: Date.now().toString(), // ইউনিক আইডি
+            id: Date.now().toString(),
             items: cart,
             totalAmount: getTotalPrice(),
             date: new Date().toISOString(),
@@ -68,7 +80,6 @@ export default function POSScreen() {
         setIsCartVisible(false);
         clearCart();
 
-        // ৪. সাকসেস মডাল দেখানো
         setTimeout(() => {
             setShowSuccessModal(true);
         }, 300);
@@ -76,8 +87,24 @@ export default function POSScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+
+            {/* Header Section */}
             <View className="bg-white dark:bg-slate-900 pb-4 pt-2 shadow-sm z-10">
-                <Text className="text-xl font-bold text-center mb-4 text-slate-800 dark:text-white">New Sale</Text>
+
+                <View className="flex-row justify-between items-center px-4 mb-4">
+                    <View style={{width: 40}}/>
+
+                    <Text className="text-xl font-bold text-center text-slate-800 dark:text-white">New Sale</Text>
+
+                    <TouchableOpacity
+                        onPress={() => setIsScannerVisible(true)}
+                        className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"
+                    >
+                        <Ionicons name="scan" size={24} color="#2563eb"/>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Categories */}
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -96,6 +123,7 @@ export default function POSScreen() {
                 />
             </View>
 
+            {/* Product List */}
             <FlatList
                 data={filteredProducts}
                 keyExtractor={(item) => item.id}
@@ -189,7 +217,6 @@ export default function POSScreen() {
                                               className="flex-1 bg-red-100 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 font-bold text-lg">Clear</Text>
                             </TouchableOpacity>
-                            {/* 🔥 Checkout Button Action Added */}
                             <TouchableOpacity onPress={handleCheckout}
                                               className="flex-2 bg-blue-600 p-4 rounded-xl items-center flex-grow active:bg-blue-700">
                                 <Text className="text-white font-bold text-lg">Checkout (৳ {getTotalPrice()})</Text>
@@ -199,12 +226,19 @@ export default function POSScreen() {
                 </View>
             </Modal>
 
-            {/* 🔥 Success Receipt Modal */}
+            {/* Success Receipt Modal */}
             <OrderSuccessModal
                 visible={showSuccessModal}
                 order={lastOrder}
                 onClose={() => setShowSuccessModal(false)}
             />
+
+            <ScannerModal
+                visible={isScannerVisible}
+                onClose={() => setIsScannerVisible(false)}
+                onScan={handleScan}
+            />
+
         </SafeAreaView>
     );
 }
