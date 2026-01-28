@@ -8,7 +8,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 
 export default function OrderHistoryScreen() {
     const router = useRouter();
-    const { orders } = useOrderStore(); // স্টোর থেকে সব অর্ডার আনা
+    const { orders } = useOrderStore();
 
     const renderOrderItem = ({ item }: { item: Order }) => (
         <View className="bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm">
