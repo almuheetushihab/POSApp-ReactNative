@@ -1,13 +1,14 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import {create} from 'zustand';
+import {persist, createJSONStorage} from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Order } from '../types/order';
+import {Order} from '../types/order';
 
 interface OrderState {
     orders: Order[];
     addOrder: (order: Order) => void;
     getTodaySales: () => number;
     getTotalOrders: () => number;
+    clearOrders: () => void;
 }
 
 export const useOrderStore = create<OrderState>()(
@@ -16,7 +17,7 @@ export const useOrderStore = create<OrderState>()(
             orders: [],
 
             addOrder: (order) => {
-                set((state) => ({ orders: [order, ...state.orders] }));
+                set((state) => ({orders: [order, ...state.orders]}));
             },
 
             getTodaySales: () => {
@@ -27,6 +28,8 @@ export const useOrderStore = create<OrderState>()(
             },
 
             getTotalOrders: () => get().orders.length,
+
+            clearOrders: () => set({orders: []}),
         }),
         {
             name: 'order-storage',
