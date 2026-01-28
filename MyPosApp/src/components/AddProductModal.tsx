@@ -1,15 +1,6 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
-    View,
-    Text,
-    Modal,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform
+    View, Text, Modal, TextInput, TouchableOpacity, Pressable, ScrollView, Alert, Image, KeyboardAvoidingView, Platform
 } from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,17 +10,38 @@ import {Product} from '../types/product';
 interface AddProductModalProps {
     visible: boolean;
     onClose: () => void;
+    productToEdit?: Product | null;
 }
 
-export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
-    const {addProduct} = useProductStore();
-
+export const AddProductModal = ({visible, onClose, productToEdit}: AddProductModalProps) => {
+    const {addProduct, updateProduct} = useProductStore();
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
     const [stock, setStock] = useState('');
     const [category, setCategory] = useState('Food');
     const [barcode, setBarcode] = useState('');
     const [image, setImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (productToEdit) {
+            setName(productToEdit.name);
+            setPrice(productToEdit.price.toString());
+            setStock(productToEdit.stock.toString());
+            setCategory(productToEdit.category);
+            setBarcode(productToEdit.barcode || '');
+            setImage(productToEdit.image || null);
+        } else {
+            resetForm();
+        }
+    }, [productToEdit, visible]);
+
+    const resetForm = () => {
+        setName('');
+        setPrice('');
+        setStock('');
+        setBarcode('');
+        setImage(null);
+    };
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -50,8 +62,8 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
             return;
         }
 
-        const newProduct: Product = {
-            id: Date.now().toString(),
+        const productData: Product = {
+            id: productToEdit ? productToEdit.id : Date.now().toString(),
             name,
             price: parseFloat(price),
             stock: parseInt(stock),
@@ -60,16 +72,16 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
             image: image || undefined
         };
 
-        addProduct(newProduct);
-        Alert.alert("Success", "Product added successfully!");
+        if (productToEdit) {
+            updateProduct(productData);
+            Alert.alert("Updated", "Product updated successfully!");
+        } else {
+            addProduct(productData);
+            Alert.alert("Success", "Product added successfully!");
+        }
 
-        // Reset Form
-        setName('');
-        setPrice('');
-        setStock('');
-        setBarcode('');
-        setImage(null);
         onClose();
+        resetForm();
     };
 
     return (
@@ -81,7 +93,9 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                 {/* Header */}
                 <View
                     className="flex-row justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-slate-800">
-                    <Text className="text-2xl font-bold text-slate-800 dark:text-white">New Product</Text>
+                    <Text className="text-2xl font-bold text-slate-800 dark:text-white">
+                        {productToEdit ? 'Edit Product' : 'New Product'}
+                    </Text>
                     <TouchableOpacity
                         onPress={onClose}
                         className="bg-gray-100 dark:bg-slate-800 p-2 rounded-full"
@@ -93,20 +107,14 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                 <ScrollView showsVerticalScrollIndicator={false}
                             contentContainerStyle={{padding: 24, paddingBottom: 50}}>
 
-                    {/* 1. Image Picker (Centered & Large) */}
+                    {/* Image Picker */}
                     <View className="items-center mb-8">
                         <TouchableOpacity
                             onPress={pickImage}
                             className="h-36 w-36 bg-slate-50 dark:bg-slate-900 rounded-3xl items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden"
-                            activeOpacity={0.8}
                         >
                             {image ? (
-                                <>
-                                    <Image source={{uri: image}} className="h-full w-full" resizeMode="cover"/>
-                                    <View className="absolute bottom-0 w-full bg-black/40 py-2 items-center">
-                                        <Ionicons name="create-outline" size={16} color="white"/>
-                                    </View>
-                                </>
+                                <Image source={{uri: image}} className="h-full w-full" resizeMode="cover"/>
                             ) : (
                                 <View className="items-center">
                                     <View className="bg-blue-50 dark:bg-slate-800 p-4 rounded-full mb-2">
@@ -118,7 +126,7 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* 2. Product Name */}
+                    {/* Product Name */}
                     <View className="mb-6">
                         <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Product Name</Text>
                         <TextInput
@@ -130,21 +138,18 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                         />
                     </View>
 
-                    {/* 3. Price & Stock Grid */}
+                    {/* Price & Stock */}
                     <View className="flex-row gap-4 mb-6">
                         <View className="flex-1">
                             <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Price</Text>
-                            <View className="relative">
-                                <Text className="absolute left-4 top-4 text-slate-400 font-bold">৳</Text>
-                                <TextInput
-                                    className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 pl-10 rounded-2xl text-slate-800 dark:text-white text-base font-bold"
-                                    placeholder="0.00"
-                                    placeholderTextColor="#94a3b8"
-                                    keyboardType="numeric"
-                                    value={price}
-                                    onChangeText={setPrice}
-                                />
-                            </View>
+                            <TextInput
+                                className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl text-slate-800 dark:text-white text-base font-bold"
+                                placeholder="0.00"
+                                placeholderTextColor="#94a3b8"
+                                keyboardType="numeric"
+                                value={price}
+                                onChangeText={setPrice}
+                            />
                         </View>
                         <View className="flex-1">
                             <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Stock</Text>
@@ -159,17 +164,17 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                         </View>
                     </View>
 
-                    {/* 4. Category Selection */}
+                    {/* Category Selection (FIXED CRASH HERE) */}
                     <View className="mb-6">
                         <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-3 ml-1">Category</Text>
                         <View className="flex-row flex-wrap gap-3">
                             {['Food', 'Drinks', 'Snacks', 'Other'].map((cat) => (
-                                <TouchableOpacity
+                                <Pressable
                                     key={cat}
                                     onPress={() => setCategory(cat)}
                                     className={`px-6 py-3 rounded-xl border ${
                                         category === cat
-                                            ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-200'
+                                            ? 'bg-blue-600 border-blue-600'
                                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
                                     }`}
                                 >
@@ -177,12 +182,12 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                                         className={`font-semibold ${category === cat ? 'text-white' : 'text-slate-600 dark:text-slate-400'}`}>
                                         {cat}
                                     </Text>
-                                </TouchableOpacity>
+                                </Pressable>
                             ))}
                         </View>
                     </View>
 
-                    {/* 5. Barcode Scanner Field */}
+                    {/* Barcode */}
                     <View className="mb-8">
                         <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Barcode
                             (Optional)</Text>
@@ -199,12 +204,14 @@ export const AddProductModal = ({visible, onClose}: AddProductModalProps) => {
                         </View>
                     </View>
 
-                    {/* 6. Save Button */}
+                    {/* Save Button */}
                     <TouchableOpacity
                         onPress={handleSubmit}
                         className="bg-blue-600 h-14 rounded-2xl items-center justify-center shadow-lg shadow-blue-300 active:bg-blue-700 mb-6"
                     >
-                        <Text className="text-white font-bold text-lg tracking-wide">Save Product</Text>
+                        <Text className="text-white font-bold text-lg tracking-wide">
+                            {productToEdit ? 'Update Product' : 'Save Product'}
+                        </Text>
                     </TouchableOpacity>
 
                 </ScrollView>
