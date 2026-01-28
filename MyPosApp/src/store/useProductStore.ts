@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { Product } from '../types/product';
-import { productService } from '../services/productService';
+import {create} from 'zustand';
+import {Product} from '../types/product';
+import {productService} from '../services/productService';
 
 interface ProductState {
     products: Product[];
@@ -15,6 +15,7 @@ interface ProductState {
     searchProducts: (query: string) => void;
     updateProduct: (updatedProduct: Product) => void;
     deleteProduct: (productId: string) => void;
+    reduceStock: (cartItems: any[]) => void;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -81,7 +82,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
                 p.id === updatedProduct.id ? updatedProduct : p
             );
 
-            return { products: newProducts, filteredProducts: newFiltered };
+            return {products: newProducts, filteredProducts: newFiltered};
         });
     },
 
@@ -89,7 +90,23 @@ export const useProductStore = create<ProductState>((set, get) => ({
         set((state) => {
             const newProducts = state.products.filter((p) => p.id !== productId);
             const newFiltered = state.filteredProducts.filter((p) => p.id !== productId);
-            return { products: newProducts, filteredProducts: newFiltered };
+            return {products: newProducts, filteredProducts: newFiltered};
+        });
+    },
+    reduceStock: (cartItems) => {
+        set((state) => {
+            const newProducts = state.products.map((product) => {
+                const cartItem = cartItems.find((item) => item.id === product.id);
+                if (cartItem) {
+                    return {...product, stock: product.stock - cartItem.quantity};
+                }
+                return product;
+            });
+            return {
+                products: newProducts,
+                filteredProducts: newProducts
+            };
         });
     }
+
 }));
