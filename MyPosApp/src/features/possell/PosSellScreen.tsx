@@ -1,18 +1,27 @@
-import React, {useState, useCallback} from 'react';
-import {View, Text, FlatList, TouchableOpacity, Modal, ScrollView, Image} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
-import {useTranslation} from 'react-i18next';
-import {useFocusEffect} from 'expo-router';
+import {useTranslation} from "react-i18next";
+import {useOrderStore} from "../../store/useOrderStore";
+import {useCallback, useState} from "react";
+import {useFocusEffect} from "expo-router";
+import {SafeAreaView} from "react-native-safe-area-context";
+import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
+import {Ionicons} from "@expo/vector-icons";
+import {OrderSuccessModal} from "../../components/OrderSuccessModal";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
+import {Order} from "../../types/order";
+import {ScannerModal} from "../../components/ScannerModal";
 
 export default function POSScreen() {
     const {t} = useTranslation();
-
-    // Store থেকে ডাটা নেওয়া
-    const {filteredProducts, fetchProducts, activeCategory, filterByCategory, products} = useProductStore();
+    const {
+        filteredProducts,
+        fetchProducts,
+        activeCategory,
+        filterByCategory,
+        products,
+        reduceStock
+    } = useProductStore();
     const {
         cart,
         addToCart,
@@ -22,17 +31,31 @@ export default function POSScreen() {
         getTotalItems,
         clearCart
     } = useCartStore();
+    const {addOrder} = useOrderStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
+    const [isScannerVisible, setIsScannerVisible] = useState(false);
 
-    // 🔥 যখনি এই স্ক্রিনে আসবে, ডাটা রিফ্রেশ করবে (যাতে আপডেটেড নাম/দাম পাওয়া যায়)
+    // Receipt Modal States
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
     useFocusEffect(
         useCallback(() => {
-            // ফিল্টার বা ক্যাটাগরি ঠিক রাখার জন্য রি-ফেচ করার দরকার নেই কারণ Zustand গ্লোবাল স্টেট
-            // তবে যদি নিশ্চিত হতে চান যে লেটেস্ট ডাটা আছে, তাহলে এখানে লজিক বসানো যায়
-            // আমাদের বর্তমান সেটআপে Zustand অটোমেটিক আপডেট করবে।
+            // Screen refresh logic if needed
         }, [])
     );
+
+    const handleScan = (scannedCode: string) => {
+        const product = products.find(p => p.barcode === scannedCode);
+
+        if (product) {
+            addToCart(product);
+            Alert.alert("Success", `${product.name} added to cart!`);
+        } else {
+            Alert.alert("Not Found", "No product found with this barcode.");
+        }
+    };
 
     const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
@@ -41,21 +64,53 @@ export default function POSScreen() {
         return item ? item.quantity : 0;
     };
 
-    // কার্ট আইটেমের লেটেস্ট ডাটা বের করার হেল্পার ফাংশন
-    // (যাতে প্রোডাক্টের নাম/ছবি পাল্টালে কার্টেও পাল্টায়)
     const getCartItemDetails = (cartItem: any) => {
         const product = products.find(p => p.id === cartItem.id);
         return product ? {...cartItem, ...product} : cartItem;
     };
 
+    const handleCheckout = () => {
+        if (cart.length === 0) return;
+        reduceStock(cart);
+        const newOrder: Order = {
+            id: Date.now().toString(),
+            items: cart,
+            totalAmount: getTotalPrice(),
+            date: new Date().toISOString(),
+            paymentMethod: 'CASH',
+        };
+
+        addOrder(newOrder);
+        setLastOrder(newOrder);
+
+        setIsCartVisible(false);
+        clearCart();
+
+        setTimeout(() => {
+            setShowSuccessModal(true);
+        }, 300);
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
 
-            {/* 1. Header & Categories */}
+            {/* Header Section */}
             <View className="bg-white dark:bg-slate-900 pb-4 pt-2 shadow-sm z-10">
-                <Text className="text-xl font-bold text-center mb-4 text-slate-800 dark:text-white">
-                    New Sale
-                </Text>
+
+                <View className="flex-row justify-between items-center px-4 mb-4">
+                    <View style={{width: 40}}/>
+
+                    <Text className="text-xl font-bold text-center text-slate-800 dark:text-white">New Sale</Text>
+
+                    <TouchableOpacity
+                        onPress={() => setIsScannerVisible(true)}
+                        className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"
+                    >
+                        <Ionicons name="scan" size={24} color="#2563eb"/>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Categories */}
                 <FlatList
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -65,22 +120,16 @@ export default function POSScreen() {
                     renderItem={({item}) => (
                         <TouchableOpacity
                             onPress={() => filterByCategory(item)}
-                            className={`mr-2 px-4 py-2 rounded-full border ${
-                                activeCategory === item
-                                    ? 'bg-blue-600 border-blue-600'
-                                    : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'
-                            }`}
+                            className={`mr-2 px-4 py-2 rounded-full border ${activeCategory === item ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'}`}
                         >
                             <Text
-                                className={activeCategory === item ? 'text-white' : 'text-slate-600 dark:text-slate-300'}>
-                                {item}
-                            </Text>
+                                className={activeCategory === item ? 'text-white' : 'text-slate-600 dark:text-slate-300'}>{item}</Text>
                         </TouchableOpacity>
                     )}
                 />
             </View>
 
-            {/* 2. Product Grid */}
+            {/* Product List */}
             <FlatList
                 data={filteredProducts}
                 keyExtractor={(item) => item.id}
@@ -89,9 +138,10 @@ export default function POSScreen() {
                 renderItem={({item}) => (
                     <ProductCard
                         product={item}
-                        onPress={addToCart}
-                        quantity={getItemQuantity(item.id)}
-                    />
+                        onAdd={() => addToCart(item)}
+                        onRemove={() => decreaseQuantity(item.id)}
+                        quantity={getItemQuantity(item.id)
+                        }/>
                 )}
                 ListEmptyComponent={
                     <View className="flex-1 justify-center items-center mt-20">
@@ -101,7 +151,7 @@ export default function POSScreen() {
                 }
             />
 
-            {/* 3. Floating Bottom Cart Bar */}
+            {/* Floating Bottom Cart Bar */}
             {cart.length > 0 && (
                 <TouchableOpacity
                     onPress={() => setIsCartVisible(true)}
@@ -117,10 +167,9 @@ export default function POSScreen() {
                 </TouchableOpacity>
             )}
 
-            {/* 4. Cart Modal (Details View) */}
+            {/* Cart Modal */}
             <Modal visible={isCartVisible} animationType="slide" presentationStyle="pageSheet">
                 <View className="flex-1 bg-gray-50 dark:bg-slate-950">
-                    {/* Modal Header */}
                     <View
                         className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
                         <Text className="text-2xl font-bold text-slate-800 dark:text-white">Current Order</Text>
@@ -129,24 +178,18 @@ export default function POSScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Cart Items List */}
                     <ScrollView className="flex-1 p-4">
                         {cart.map((rawItem) => {
-                            // কার্টে থাকা আইটেমের সাথে মেইন স্টোরের লেটেস্ট ডাটা মার্জ করা হচ্ছে
                             const item = getCartItemDetails(rawItem);
-
                             return (
                                 <View key={item.id}
                                       className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl shadow-sm">
                                     <View className="flex-row items-center gap-3 flex-1">
                                         <View
                                             className="h-12 w-12 bg-gray-100 dark:bg-slate-800 rounded-lg items-center justify-center overflow-hidden">
-                                            {item.image ? (
-                                                <Image source={{uri: item.image}} className="h-full w-full"
-                                                       resizeMode="cover"/>
-                                            ) : (
-                                                <Ionicons name="image-outline" size={24} color="#94a3b8"/>
-                                            )}
+                                            {item.image ? <Image source={{uri: item.image}} className="h-full w-full"
+                                                                 resizeMode="cover"/> :
+                                                <Ionicons name="image-outline" size={24} color="#94a3b8"/>}
                                         </View>
                                         <View>
                                             <Text
@@ -155,8 +198,6 @@ export default function POSScreen() {
                                                 className="text-slate-500 dark:text-slate-400">৳{item.price} x {item.quantity}</Text>
                                         </View>
                                     </View>
-
-                                    {/* Quantity Controls */}
                                     <View
                                         className="flex-row items-center gap-3 bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
                                         <TouchableOpacity onPress={() => decreaseQuantity(item.id)}
@@ -176,30 +217,37 @@ export default function POSScreen() {
                         })}
                     </ScrollView>
 
-                    {/* Checkout Footer */}
                     <View className="p-6 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
                         <View className="flex-row justify-between mb-4">
                             <Text className="text-slate-500 text-lg">Subtotal</Text>
                             <Text
                                 className="text-slate-800 dark:text-white text-lg font-bold">৳ {getTotalPrice()}</Text>
                         </View>
-                        <View className="flex-row justify-between mb-6">
-                            <Text className="text-slate-500 text-lg">VAT (0%)</Text>
-                            <Text className="text-slate-800 dark:text-white text-lg font-bold">৳ 0</Text>
-                        </View>
-
                         <View className="flex-row gap-4">
                             <TouchableOpacity onPress={clearCart}
                                               className="flex-1 bg-red-100 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 font-bold text-lg">Clear</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity className="flex-2 bg-blue-600 p-4 rounded-xl items-center flex-grow">
+                            <TouchableOpacity onPress={handleCheckout}
+                                              className="flex-2 bg-blue-600 p-4 rounded-xl items-center flex-grow active:bg-blue-700">
                                 <Text className="text-white font-bold text-lg">Checkout (৳ {getTotalPrice()})</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
+
+            <OrderSuccessModal
+                visible={showSuccessModal}
+                order={lastOrder}
+                onClose={() => setShowSuccessModal(false)}
+            />
+
+            <ScannerModal
+                visible={isScannerVisible}
+                onClose={() => setIsScannerVisible(false)}
+                onScan={handleScan}
+            />
         </SafeAreaView>
     );
 }

@@ -1,162 +1,153 @@
 import React, {useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity, ScrollView, Image, Alert} from 'react-native';
+import {View, Text, Image, TouchableOpacity, ScrollView, Alert} from 'react-native';
 import {useLocalSearchParams, useRouter} from 'expo-router';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import {useProductStore} from "../../store/useProductStore";
+import {AddProductModal} from "../../components/AddProductModal";
+
 
 export default function ProductDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const {updateProduct} = useProductStore();
 
-    const [name, setName] = useState(params.name as string);
-    const [price, setPrice] = useState(params.price as string);
-    const [stock, setStock] = useState(params.stock as string);
-    const [image, setImage] = useState(params.image as string);
+    const {deleteProduct, products} = useProductStore();
 
-    const pickImage = async () => {
-        const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to make this work!');
-            return;
-        }
+    const product = products.find(p => p.id === params.id);
 
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.5,
-        });
-
-        if (!result.canceled) {
-            setImage(result.assets[0].uri);
-        }
-    };
-
-    const handleSave = () => {
-        if (!name || !price || !stock) {
-            Alert.alert("Error", "Please fill all fields");
-            return;
-        }
-
-        const updatedItem = {
-            id: params.id as string,
-            name: name,
-            price: parseFloat(price),
-            stock: parseInt(stock),
-            image: image,
-            category: params.category as string,
-        };
-
-        updateProduct(updatedItem);
-
-        Alert.alert("Success", "Product updated successfully!", [
-            {text: "OK", onPress: () => router.back()}
-        ]);
-    };
+    if (!product) {
+        return (
+            <SafeAreaView className="flex-1 justify-center items-center bg-white dark:bg-slate-950">
+                <Text className="text-slate-500 mb-4">Product not found!</Text>
+                <TouchableOpacity onPress={() => router.back()} className="bg-blue-600 px-6 py-2 rounded-full">
+                    <Text className="text-white font-bold">Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
 
     const handleDelete = () => {
-        Alert.alert("Delete Product", "Are you sure?", [
-            {text: "Cancel", style: "cancel"},
-            {text: "Delete", style: "destructive", onPress: () => router.back()}
-        ]);
+        Alert.alert(
+            "Delete Product",
+            `Are you sure you want to delete "${product.name}"?`,
+            [
+                {text: "Cancel", style: "cancel"},
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => {
+                        deleteProduct(product.id);
+                        router.back();
+                    }
+                }
+            ]
+        );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+        <SafeAreaView className="flex-1 bg-white dark:bg-slate-950" edges={['top', 'left', 'right']}>
+            <ScrollView showsVerticalScrollIndicator={false}>
 
-            {/* Header */}
-            <View
-                className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
-                <TouchableOpacity onPress={() => router.back()}
-                                  className="p-2 rounded-full bg-gray-100 dark:bg-slate-800">
-                    <Ionicons name="arrow-back" size={24} color="#64748b"/>
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-slate-800 dark:text-white">Edit Product</Text>
-                <TouchableOpacity onPress={handleDelete}>
-                    <Ionicons name="trash-outline" size={24} color="#ef4444"/>
-                </TouchableOpacity>
-            </View>
+                <View className="h-80 w-full bg-gray-100 dark:bg-slate-900 relative items-center justify-center">
+                    {product.image ? (
+                        <Image source={{uri: product.image}} className="h-64 w-64" resizeMode="contain"/>
+                    ) : (
+                        <Ionicons name="image-outline" size={80} color="#94a3b8"/>
+                    )}
 
-            <ScrollView className="p-5">
-
-                {/* Image Upload Section */}
-                <View className="items-center justify-center mb-8">
-                    <TouchableOpacity onPress={pickImage} className="active:opacity-70">
-                        <View
-                            className="h-40 w-40 bg-white dark:bg-slate-800 rounded-2xl items-center justify-center shadow-sm border border-gray-200 dark:border-slate-700 relative overflow-hidden">
-                            {image ? (
-                                <Image source={{uri: image}} className="h-full w-full" resizeMode="cover"/>
-                            ) : (
-                                <Ionicons name="image-outline" size={60} color="#cbd5e1"/>
-                            )}
-
-                            {/* Camera Icon Overlay */}
-                            <View className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-tl-xl">
-                                <Ionicons name="camera" size={20} color="white"/>
-                            </View>
-                        </View>
-                        <Text className="text-center mt-3 text-blue-600 font-medium">Change Photo</Text>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        className="absolute top-4 left-4 bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm z-10"
+                    >
+                        <Ionicons name="arrow-back" size={24} color="#333"/>
                     </TouchableOpacity>
+
+                    <View className="absolute top-4 right-4 flex-row gap-3 z-10">
+                        {/* Edit Button */}
+                        <TouchableOpacity
+                            onPress={() => setIsEditModalVisible(true)}
+                            className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
+                        >
+                            <Ionicons name="create-outline" size={24} color="#2563eb"/>
+                        </TouchableOpacity>
+
+                        {/* Delete Button */}
+                        <TouchableOpacity
+                            onPress={handleDelete}
+                            className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
+                        >
+                            <Ionicons name="trash-outline" size={24} color="#ef4444"/>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                {/* Form Inputs */}
-                <View
-                    className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 space-y-4">
+                {/* Details Body */}
+                <View className="p-6 -mt-8 bg-white dark:bg-slate-950 rounded-t-[32px] shadow-lg flex-1">
 
-                    <View>
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2">Product Name</Text>
-                        <TextInput
-                            value={name}
-                            onChangeText={setName}
-                            className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white font-semibold text-lg border border-gray-200 dark:border-slate-700"
-                        />
+                    {/* Name & Price */}
+                    <View className="flex-row justify-between items-start mb-6">
+                        <View className="flex-1 mr-4">
+                            <Text className="text-2xl font-bold text-slate-800 dark:text-white mb-2 leading-tight">
+                                {product.name}
+                            </Text>
+                            <View className="flex-row">
+                                <View className="bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                                    <Text className="text-blue-600 dark:text-blue-400 text-xs font-bold uppercase">
+                                        {product.category}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                        <Text className="text-3xl font-bold text-blue-600">৳{product.price}</Text>
                     </View>
 
-                    <View className="flex-row gap-4 mt-4">
-                        <View className="flex-1">
-                            <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2">Price (৳)</Text>
-                            <TextInput
-                                value={price}
-                                onChangeText={setPrice}
-                                keyboardType="numeric"
-                                className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white font-bold text-lg border border-gray-200 dark:border-slate-700"
-                            />
-                        </View>
-                        <View className="flex-1">
-                            <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2">Stock (Qty)</Text>
-                            <TextInput
-                                value={stock}
-                                onChangeText={setStock}
-                                keyboardType="numeric"
-                                className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white font-bold text-lg border border-gray-200 dark:border-slate-700"
-                            />
-                        </View>
-                    </View>
-
-                    <View className="mt-4">
-                        <Text className="text-slate-500 dark:text-slate-400 font-medium mb-2">Category</Text>
+                    {/* Info Cards (Stock & Status) */}
+                    <View className="flex-row gap-4 mb-8">
                         <View
-                            className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
-                            <Text className="text-blue-600 dark:text-blue-400 font-semibold">{params.category}</Text>
+                            className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl flex-1 items-center border border-slate-100 dark:border-slate-800">
+                            <Text className="text-slate-400 text-xs uppercase font-bold mb-1">Stock Level</Text>
+                            <Text className="text-xl font-bold text-slate-800 dark:text-white">{product.stock}</Text>
+                        </View>
+                        <View
+                            className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl flex-1 items-center border border-slate-100 dark:border-slate-800">
+                            <Text className="text-slate-400 text-xs uppercase font-bold mb-1">Status</Text>
+                            <Text
+                                className={`text-xl font-bold ${Number(product.stock) > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                {Number(product.stock) > 0 ? 'In Stock' : 'Out'}
+                            </Text>
                         </View>
                     </View>
+
+                    {/* Barcode Info */}
+                    {product.barcode ? (
+                        <View
+                            className="flex-row items-center gap-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl mb-8 border border-slate-100 dark:border-slate-800">
+                            <Ionicons name="barcode-outline" size={24} color="#64748b"/>
+                            <View>
+                                <Text className="text-slate-400 text-xs font-bold uppercase">Barcode</Text>
+                                <Text
+                                    className="text-slate-700 dark:text-slate-300 font-medium">{product.barcode}</Text>
+                            </View>
+                        </View>
+                    ) : null}
+
+                    {/* Description */}
+                    <Text className="text-slate-800 dark:text-white font-bold text-lg mb-2">Description</Text>
+                    <Text className="text-slate-500 dark:text-slate-400 leading-6">
+                        This is a high-quality product from the {product.category} category.
+                        Manage your inventory efficiently by tracking stock levels and updating prices as needed.
+                    </Text>
+
                 </View>
             </ScrollView>
 
-            {/* Save Button */}
-            <View className="p-5 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
-                <TouchableOpacity
-                    onPress={handleSave}
-                    className="bg-blue-600 w-full p-4 rounded-xl items-center shadow-lg shadow-blue-200 dark:shadow-none active:bg-blue-700"
-                >
-                    <Text className="text-white font-bold text-lg">Save Changes</Text>
-                </TouchableOpacity>
-            </View>
-
+            <AddProductModal
+                visible={isEditModalVisible}
+                onClose={() => setIsEditModalVisible(false)}
+                productToEdit={product}
+            />
         </SafeAreaView>
     );
 }
