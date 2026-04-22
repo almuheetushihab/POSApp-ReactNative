@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput, ScrollView } from 'react-native';
 import { useRouter } from "expo-router";
 import { useOrderStore } from "../../store/useOrderStore";
 import { Order } from "../../types/order";
@@ -9,13 +9,20 @@ import { pdfService } from "../../services/pdfService";
 
 export default function OrderHistoryScreen() {
     const router = useRouter();
-    const { orders, clearOrders, processRefund, processReturn } = useOrderStore();
+    const { orders, clearOrders, processRefund, processReturn, processExchange } = useOrderStore();
     
     // Modal states
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-    const [isRefundModalVisible, setRefundModalVisible] = useState(false);
+    const [isOptionsModalVisible, setOptionsModalVisible] = useState(false);
+    
+    // Action Modals
     const [isReturnModalVisible, setReturnModalVisible] = useState(false);
+    const [isExchangeModalVisible, setExchangeModalVisible] = useState(false);
+    
+    // Inputs
     const [returnReason, setReturnReason] = useState('');
+    const [exchangeReason, setExchangeReason] = useState('');
+    const [priceDiff, setPriceDiff] = useState('');
 
     const handleClearHistory = () => {
         Alert.alert(
@@ -50,7 +57,7 @@ export default function OrderHistoryScreen() {
                             refundedAmount: order.totalAmount,
                             reason: 'Customer requested full refund'
                         });
-                        setRefundModalVisible(false);
+                        setOptionsModalVisible(false);
                         Alert.alert("Success", "Order fully refunded.");
                     }
                 }
@@ -67,10 +74,32 @@ export default function OrderHistoryScreen() {
         }
     };
 
+    const submitExchange = () => {
+        if (selectedOrder) {
+            const numDiff = parseFloat(priceDiff);
+            if(isNaN(numDiff)) {
+                Alert.alert("Error", "Please enter a valid number for price difference.");
+                return;
+            }
+
+            processExchange(selectedOrder.id, {
+                exchangeDate: new Date().toISOString(),
+                reason: exchangeReason || 'Customer exchanged items',
+                exchangedItems: [], // In a full UI, you'd select which specific items were exchanged
+                priceDifference: numDiff
+            });
+            
+            setExchangeModalVisible(false);
+            setExchangeReason('');
+            setPriceDiff('');
+            Alert.alert("Success", "Order marked as exchanged.");
+        }
+    };
+
     const openOptionsModal = (order: Order) => {
-        if(order.status === 'COMPLETED') {
+        if(order.status === 'COMPLETED' || order.status === 'EXCHANGED') {
              setSelectedOrder(order);
-             setRefundModalVisible(true);
+             setOptionsModalVisible(true);
         } else {
              Alert.alert("Info", `This order is already ${order.status.toLowerCase()}`);
         }
@@ -86,6 +115,8 @@ export default function OrderHistoryScreen() {
                 return { bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-100 dark:border-orange-900/30', text: 'text-orange-700 dark:text-orange-400' };
             case 'PARTIAL_RETURN':
                 return { bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-100 dark:border-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400' };
+            case 'EXCHANGED':
+                return { bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-900/30', text: 'text-indigo-700 dark:text-indigo-400' };
             default:
                 return { bg: 'bg-gray-50 dark:bg-gray-900/20', border: 'border-gray-100 dark:border-gray-900/30', text: 'text-gray-700 dark:text-gray-400' };
         }
@@ -93,6 +124,7 @@ export default function OrderHistoryScreen() {
 
     const renderOrderItem = ({ item }: { item: Order }) => {
         const statusStyle = getStatusStyle(item.status);
+        const isStrikeThrough = item.status === 'REFUNDED' || item.status === 'RETURNED';
 
         return (
             <TouchableOpacity 
@@ -119,12 +151,12 @@ export default function OrderHistoryScreen() {
                     </View>
 
                     <View className="flex-row gap-2">
-                        {item.status === 'COMPLETED' && (
+                        {(item.status === 'COMPLETED' || item.status === 'EXCHANGED') && (
                              <TouchableOpacity
                                 onPress={() => openOptionsModal(item)}
                                 className="p-2 bg-rose-50 dark:bg-slate-800 rounded-full border border-rose-100 dark:border-slate-700 active:bg-rose-100"
                             >
-                                <Ionicons name="arrow-undo-outline" size={20} color="#e11d48" />
+                                <Ionicons name="settings-outline" size={20} color="#e11d48" />
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity
@@ -142,9 +174,16 @@ export default function OrderHistoryScreen() {
                     <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-5">
                         {item.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
                     </Text>
+                    
                     {item.refundDetails && (
-                        <Text className="text-rose-600 dark:text-rose-400 text-xs font-medium mt-2">
-                            Reason: {item.refundDetails.reason}
+                        <Text className="text-rose-600 dark:text-rose-400 text-xs font-medium mt-2 bg-rose-50 dark:bg-rose-900/10 p-2 rounded-lg">
+                            Refund Reason: {item.refundDetails.reason}
+                        </Text>
+                    )}
+                    
+                    {item.exchangeDetails && (
+                        <Text className="text-indigo-600 dark:text-indigo-400 text-xs font-medium mt-2 bg-indigo-50 dark:bg-indigo-900/10 p-2 rounded-lg">
+                            Exchange Reason: {item.exchangeDetails.reason}
                         </Text>
                     )}
                 </View>
@@ -156,7 +195,7 @@ export default function OrderHistoryScreen() {
                             {item.status} • {item.paymentMethod}
                         </Text>
                     </View>
-                    <Text className={`text-xl font-bold ${item.status === 'COMPLETED' ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>
+                    <Text className={`text-xl font-bold ${!isStrikeThrough ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>
                         ৳{item.totalAmount}
                     </Text>
                 </View>
@@ -209,18 +248,18 @@ export default function OrderHistoryScreen() {
                 }
             />
 
-            {/* Action Modal (Choose Refund or Return) */}
+            {/* Action Modal (Choose Action) */}
             <Modal
-                visible={isRefundModalVisible}
+                visible={isOptionsModalVisible}
                 transparent={true}
                 animationType="fade"
-                onRequestClose={() => setRefundModalVisible(false)}
+                onRequestClose={() => setOptionsModalVisible(false)}
             >
                 <View className="flex-1 justify-center items-center bg-black/50 p-5">
                     <View className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-xl">
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-xl font-bold text-slate-800 dark:text-white">Order Options</Text>
-                            <TouchableOpacity onPress={() => setRefundModalVisible(false)} className="p-2">
+                            <TouchableOpacity onPress={() => setOptionsModalVisible(false)} className="p-2">
                                 <Ionicons name="close" size={24} color="#64748b" />
                             </TouchableOpacity>
                         </View>
@@ -234,23 +273,34 @@ export default function OrderHistoryScreen() {
 
                         <TouchableOpacity 
                             onPress={() => {
-                                if(selectedOrder) handleFullRefund(selectedOrder);
+                                setOptionsModalVisible(false);
+                                setExchangeModalVisible(true);
                             }}
-                            className="bg-rose-500 py-4 rounded-xl items-center mb-3 flex-row justify-center gap-2"
+                            className="bg-indigo-500 py-4 rounded-xl items-center mb-3 flex-row justify-center gap-2"
                         >
-                            <Ionicons name="cash-outline" size={20} color="white" />
-                            <Text className="text-white font-bold text-base">Full Refund (Cash Back)</Text>
+                            <Ionicons name="swap-horizontal" size={20} color="white" />
+                            <Text className="text-white font-bold text-base">Exchange Products</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
                             onPress={() => {
-                                setRefundModalVisible(false);
+                                setOptionsModalVisible(false);
                                 setReturnModalVisible(true);
                             }}
-                            className="bg-orange-500 py-4 rounded-xl items-center flex-row justify-center gap-2"
+                            className="bg-orange-500 py-4 rounded-xl items-center mb-3 flex-row justify-center gap-2"
                         >
                             <Ionicons name="cube-outline" size={20} color="white" />
-                            <Text className="text-white font-bold text-base">Process Return (Items back)</Text>
+                            <Text className="text-white font-bold text-base">Process Return</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                            onPress={() => {
+                                if(selectedOrder) handleFullRefund(selectedOrder);
+                            }}
+                            className="bg-rose-500 py-4 rounded-xl items-center flex-row justify-center gap-2"
+                        >
+                            <Ionicons name="cash-outline" size={20} color="white" />
+                            <Text className="text-white font-bold text-base">Full Refund</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -290,6 +340,57 @@ export default function OrderHistoryScreen() {
                         >
                             <Text className="text-white font-bold text-lg">Confirm Return</Text>
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Exchange Modal */}
+            <Modal
+                visible={isExchangeModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setExchangeModalVisible(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className="bg-white dark:bg-slate-900 rounded-t-3xl p-6 shadow-xl min-h-[60%]">
+                         <View className="flex-row justify-between items-center mb-6">
+                            <Text className="text-xl font-bold text-slate-800 dark:text-white">Exchange Details</Text>
+                            <TouchableOpacity onPress={() => setExchangeModalVisible(false)} className="p-2">
+                                <Ionicons name="close" size={24} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text className="text-slate-700 dark:text-slate-300 font-bold mb-2">Price Difference (৳)</Text>
+                            <Text className="text-slate-500 text-xs mb-2">Use positive (+) if customer pays more, negative (-) if shop owes customer.</Text>
+                            <TextInput
+                                className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-slate-800 dark:text-white text-base mb-4 font-bold"
+                                placeholder="e.g. 500 or -200"
+                                placeholderTextColor="#94a3b8"
+                                keyboardType="numbers-and-punctuation"
+                                value={priceDiff}
+                                onChangeText={setPriceDiff}
+                            />
+
+                            <Text className="text-slate-700 dark:text-slate-300 font-bold mb-2">Reason for Exchange</Text>
+                            <TextInput
+                                className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-slate-800 dark:text-white text-base mb-6"
+                                placeholder="e.g. Size didn't fit, wrong color..."
+                                placeholderTextColor="#94a3b8"
+                                multiline
+                                numberOfLines={3}
+                                value={exchangeReason}
+                                onChangeText={setExchangeReason}
+                                textAlignVertical="top"
+                            />
+
+                            <TouchableOpacity 
+                                onPress={submitExchange}
+                                className="bg-indigo-600 py-4 rounded-xl items-center mb-6"
+                            >
+                                <Text className="text-white font-bold text-lg">Confirm Exchange</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
