@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput, ScrollView } from 'react-native';
 import { useRouter } from "expo-router";
 import { useOrderStore } from "../../store/useOrderStore";
-import { Order } from "../../types/order";
+import { Order, PaymentMethod } from "../../types/order";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { pdfService } from "../../services/pdfService";
@@ -122,6 +122,17 @@ export default function OrderHistoryScreen() {
         }
     };
 
+    const formatPaymentMethod = (order: Order) => {
+        if (order.paymentMethod === 'SPLIT' && order.splitPaymentDetails) {
+            const parts = [];
+            if(order.splitPaymentDetails.cashAmount > 0) parts.push('Cash');
+            if(order.splitPaymentDetails.cardAmount > 0) parts.push('Card');
+            if(order.splitPaymentDetails.mfsAmount > 0) parts.push('MFS');
+            return `SPLIT (${parts.join('+')})`;
+        }
+        return order.paymentMethod;
+    };
+
     const renderOrderItem = ({ item }: { item: Order }) => {
         const statusStyle = getStatusStyle(item.status);
         const isStrikeThrough = item.status === 'REFUNDED' || item.status === 'RETURNED';
@@ -171,10 +182,38 @@ export default function OrderHistoryScreen() {
                 {/* Middle Row: Items Summary */}
                 <View className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl mb-3">
                     <Text className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold mb-1">Items</Text>
-                    <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-5">
+                    <Text className="text-slate-700 dark:text-slate-300 text-sm font-medium leading-5 mb-2">
                         {item.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
                     </Text>
                     
+                    {/* Standard Card Details */}
+                    {item.paymentMethod === 'CARD' && item.cardDetails && (
+                         <View className="bg-indigo-50 dark:bg-indigo-900/10 p-2 rounded-lg mt-1 border border-indigo-100 dark:border-indigo-900/20">
+                            <Text className="text-indigo-700 dark:text-indigo-400 text-xs font-bold mb-1">Card Payment:</Text>
+                            <Text className="text-indigo-600 dark:text-indigo-300 text-xs">• {item.cardDetails.cardType || 'Card'} ending in **{item.cardDetails.lastFourDigits || 'XXXX'}</Text>
+                            {item.cardDetails.transactionId && <Text className="text-indigo-600 dark:text-indigo-300 text-xs">• TrxID: {item.cardDetails.transactionId}</Text>}
+                        </View>
+                    )}
+
+                    {/* Standard MFS Details */}
+                    {item.paymentMethod === 'MFS' && item.mfsDetails && (
+                         <View className="bg-rose-50 dark:bg-rose-900/10 p-2 rounded-lg mt-1 border border-rose-100 dark:border-rose-900/20">
+                            <Text className="text-rose-700 dark:text-rose-400 text-xs font-bold mb-1">Mobile Banking:</Text>
+                            <Text className="text-rose-600 dark:text-rose-300 text-xs">• {item.mfsDetails.mfsType || 'MFS'} ({item.mfsDetails.phoneNumber || 'N/A'})</Text>
+                            {item.mfsDetails.transactionId && <Text className="text-rose-600 dark:text-rose-300 text-xs">• TrxID: {item.mfsDetails.transactionId}</Text>}
+                        </View>
+                    )}
+
+                    {/* Split Payment Breakdown */}
+                    {item.paymentMethod === 'SPLIT' && item.splitPaymentDetails && (
+                        <View className="bg-purple-50 dark:bg-purple-900/10 p-2 rounded-lg mt-1 border border-purple-100 dark:border-purple-900/20">
+                            <Text className="text-purple-700 dark:text-purple-400 text-xs font-bold mb-1">Split Breakdown:</Text>
+                            {item.splitPaymentDetails.cashAmount > 0 && <Text className="text-purple-600 dark:text-purple-300 text-xs">• Cash: ৳{item.splitPaymentDetails.cashAmount}</Text>}
+                            {item.splitPaymentDetails.cardAmount > 0 && <Text className="text-purple-600 dark:text-purple-300 text-xs">• Card ({item.splitPaymentDetails.cardDetails?.cardType || 'N/A'} **{item.splitPaymentDetails.cardDetails?.lastFourDigits || 'XXXX'}): ৳{item.splitPaymentDetails.cardAmount}</Text>}
+                            {item.splitPaymentDetails.mfsAmount > 0 && <Text className="text-purple-600 dark:text-purple-300 text-xs">• MFS ({item.splitPaymentDetails.mfsDetails?.mfsType || 'N/A'}): ৳{item.splitPaymentDetails.mfsAmount}</Text>}
+                        </View>
+                    )}
+
                     {item.refundDetails && (
                         <Text className="text-rose-600 dark:text-rose-400 text-xs font-medium mt-2 bg-rose-50 dark:bg-rose-900/10 p-2 rounded-lg">
                             Refund Reason: {item.refundDetails.reason}
@@ -192,7 +231,7 @@ export default function OrderHistoryScreen() {
                 <View className="flex-row justify-between items-center pt-2 border-t border-gray-100 dark:border-slate-800">
                     <View className={`${statusStyle.bg} px-2.5 py-1 rounded-lg border ${statusStyle.border}`}>
                         <Text className={`${statusStyle.text} text-xs font-bold uppercase`}>
-                            {item.status} • {item.paymentMethod}
+                            {item.status} • {formatPaymentMethod(item)}
                         </Text>
                     </View>
                     <Text className={`text-xl font-bold ${!isStrikeThrough ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>
