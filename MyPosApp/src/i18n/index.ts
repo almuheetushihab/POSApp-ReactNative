@@ -6,6 +6,7 @@ import * as Localization from 'expo-localization';
 import en from './en.json';
 import bn from './bn.json';
 
+
 const resources = {
     en: {translation: en},
     bn: {translation: bn},

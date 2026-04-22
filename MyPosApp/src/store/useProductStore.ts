@@ -62,7 +62,12 @@ export const useProductStore = create<ProductState>()(
                     : products.filter((p) => p.category === category);
 
                 if (searchQuery) {
-                    result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                    const lowerQuery = searchQuery.toLowerCase();
+                    result = result.filter(p => 
+                        p.name.toLowerCase().includes(lowerQuery) ||
+                        (p.sku && p.sku.toLowerCase().includes(lowerQuery)) ||
+                        (p.barcode && p.barcode.toLowerCase().includes(lowerQuery))
+                    );
                 }
 
                 set({ filteredProducts: result });
@@ -72,8 +77,13 @@ export const useProductStore = create<ProductState>()(
                 const { products, activeCategory } = get();
                 set({ searchQuery: query });
 
+                const lowerQuery = query.toLowerCase();
+                
+                // Smart search: Check name, SKU, or barcode
                 let result = products.filter((p) =>
-                    p.name.toLowerCase().includes(query.toLowerCase())
+                    p.name.toLowerCase().includes(lowerQuery) ||
+                    (p.sku && p.sku.toLowerCase().includes(lowerQuery)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(lowerQuery))
                 );
 
                 if (activeCategory !== 'All') {
