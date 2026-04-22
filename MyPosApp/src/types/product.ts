@@ -6,6 +6,7 @@ export interface Product {
     image?: string;
     stock: number;
     barcode?: string;
+    sku?: string;
 }
 
 export interface ProductResponse {
