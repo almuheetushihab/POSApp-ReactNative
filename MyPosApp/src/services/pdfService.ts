@@ -69,9 +69,20 @@ export const pdfService = {
             `;
         }
 
+        // Generate Tax HTML
+        let taxHtml = '';
+        if (order.tax && order.tax.taxAmount > 0) {
+             const taxLabel = `${order.tax.taxName} (${order.tax.taxRate}%) ${order.tax.isInclusive ? '[Incl]' : '[Excl]'}`;
+             taxHtml = `
+                 <div class="row">
+                   <span>${taxLabel}</span>
+                   <span>${order.tax.isInclusive ? 'Included' : `+ ৳${order.tax.taxAmount.toFixed(2)}`}</span>
+                 </div>
+             `;
+        }
+
         // Determine SubTotal
-        // If order object has subTotal field, use it, otherwise fallback to totalAmount + discount
-        const subTotalVal = order.subTotal || (order.totalAmount + (order.discount?.amountCalculated || 0));
+        const subTotalVal = order.subTotal || (order.totalAmount + (order.discount?.amountCalculated || 0) - (order.tax && !order.tax.isInclusive ? order.tax.taxAmount : 0));
 
         return `
           <html>
@@ -134,6 +145,7 @@ export const pdfService = {
                   <span>৳${subTotalVal.toFixed(2)}</span>
                 </div>
                 ${discountHtml}
+                ${taxHtml}
                 <div class="row total">
                   <span>Total Paid</span>
                   <span>৳${order.totalAmount.toFixed(2)}</span>

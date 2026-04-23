@@ -9,9 +9,10 @@ import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
-import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymentDetails, DiscountDetails, CustomerDetails} from "../../types/order";
+import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymentDetails, DiscountDetails, CustomerDetails, TaxDetails} from "../../types/order";
 import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
+import {useSettingsStore} from "../../store/useSettingsStore";
 
 export default function POSScreen() {
     const {t} = useTranslation();
@@ -33,6 +34,7 @@ export default function POSScreen() {
         clearCart
     } = useCartStore();
     const {addOrder} = useOrderStore();
+    const {taxSettings} = useSettingsStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
@@ -79,10 +81,11 @@ export default function POSScreen() {
         return product ? {...cartItem, ...product} : cartItem;
     };
 
-    // Calculate Subtotal and Final Total with Discounts
+    // Calculate Subtotal, Discounts, and Tax
     const subTotal = getTotalPrice();
     let discountAmount = 0;
     const val = parseFloat(discountValueStr) || 0;
+    
     if (val > 0) {
         if (discountType === 'FIXED') {
             discountAmount = val;
@@ -90,8 +93,29 @@ export default function POSScreen() {
             discountAmount = (subTotal * val) / 100;
         }
     }
-    // Prevent negative total
-    const finalTotal = Math.max(0, subTotal - discountAmount);
+    
+    const totalAfterDiscount = Math.max(0, subTotal - discountAmount);
+
+    let taxAmount = 0;
+    if (taxSettings.isEnabled) {
+        if (taxSettings.isInclusive) {
+            // Formula for inclusive tax: Amount * (Rate / (100 + Rate))
+            // This means the totalAfterDiscount ALREADY includes the tax. 
+            // We just need to calculate how much of it was tax for reporting.
+            taxAmount = totalAfterDiscount * (taxSettings.taxRate / (100 + taxSettings.taxRate));
+        } else {
+            // Formula for exclusive tax: Amount * (Rate / 100)
+            // This adds tax ON TOP of the totalAfterDiscount.
+            taxAmount = totalAfterDiscount * (taxSettings.taxRate / 100);
+        }
+    }
+
+    // Final total calculation
+    // If tax is inclusive, final total doesn't increase. 
+    // If tax is exclusive, final total increases by tax amount.
+    const finalTotal = taxSettings.isEnabled && !taxSettings.isInclusive 
+        ? totalAfterDiscount + taxAmount 
+        : totalAfterDiscount;
 
     const initiateCheckout = () => {
         if (cart.length === 0) return;
@@ -119,11 +143,19 @@ export default function POSScreen() {
             amountCalculated: discountAmount
         } : undefined;
 
+        const taxDetails: TaxDetails | undefined = taxSettings.isEnabled ? {
+            taxName: taxSettings.taxName,
+            taxRate: taxSettings.taxRate,
+            taxAmount: taxAmount,
+            isInclusive: taxSettings.isInclusive
+        } : undefined;
+
         const newOrder: Order = {
             id: Date.now().toString(),
             items: cart,
             subTotal: subTotal,
             discount: discount,
+            tax: taxDetails,
             totalAmount: finalTotal,
             date: new Date().toISOString(),
             customer: customer,
@@ -353,6 +385,18 @@ export default function POSScreen() {
                             <View className="flex-row justify-between mb-2">
                                 <Text className="text-rose-500 font-medium">Discount {discountType === 'PERCENTAGE' ? `(${val}%)` : ''}</Text>
                                 <Text className="text-rose-600 font-bold">- ৳ {discountAmount.toFixed(2)}</Text>
+                            </View>
+                        )}
+                        
+                        {taxSettings.isEnabled && (
+                            <View className="flex-row justify-between mb-2">
+                                <Text className="text-slate-500 font-medium">
+                                    {taxSettings.taxName} ({taxSettings.taxRate}%) 
+                                    <Text className="text-[10px]"> {taxSettings.isInclusive ? '(Inclusive)' : '(Exclusive)'}</Text>
+                                </Text>
+                                <Text className="text-slate-800 dark:text-white font-bold">
+                                    {taxSettings.isInclusive ? 'Included' : `+ ৳ ${taxAmount.toFixed(2)}`}
+                                </Text>
                             </View>
                         )}
 

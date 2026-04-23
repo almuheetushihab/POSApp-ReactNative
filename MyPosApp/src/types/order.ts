@@ -48,6 +48,13 @@ export interface DiscountDetails {
     reason?: string; // Optional reason for the discount
 }
 
+export interface TaxDetails {
+    taxName: string; // e.g. VAT, GST
+    taxRate: number; // e.g. 5%
+    taxAmount: number; // Calculated tax amount in Taka
+    isInclusive: boolean; // Whether the tax was already included in the item price or added on top
+}
+
 export interface CustomerDetails {
     id?: string;
     name: string;
@@ -61,7 +68,8 @@ export interface Order {
     items: CartItem[];
     subTotal: number; // Sum of items price * quantity before discount
     discount?: DiscountDetails; // Information about any applied discount
-    totalAmount: number; // Final amount to pay (subTotal - discountAmount)
+    tax?: TaxDetails; // Information about applied tax/VAT
+    totalAmount: number; // Final amount to pay (subTotal - discount + tax (if exclusive))
     date: string;
     
     // Customer Info
