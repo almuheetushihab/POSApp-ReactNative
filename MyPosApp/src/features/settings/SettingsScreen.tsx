@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, ScrollView, Switch, TextInput, Alert} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, Switch, TextInput, Alert, ActivityIndicator} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
@@ -8,6 +8,9 @@ import {useColorScheme} from 'nativewind';
 import {useAppStore} from "../../store/useAppStore";
 import {useSettingsStore, TaxSettings} from "../../store/useSettingsStore";
 import {useAuthStore} from "../../store/useAuthStore";
+import {useOrderStore} from "../../store/useOrderStore";
+import {useCustomerStore} from "../../store/useCustomerStore";
+import {cloudSyncService} from "../../services/syncService";
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -17,6 +20,11 @@ export default function SettingsScreen() {
     const {theme, setTheme, language, setLanguage} = useAppStore();
     const {shopInfo, updateShopInfo, taxSettings, updateTaxSettings} = useSettingsStore();
     const {logout} = useAuthStore();
+    
+    // Sync states
+    const {unsyncedOrders, retryFailedSyncs: retryOrderSync, pullCloudUpdates} = useOrderStore();
+    const {unsyncedCustomers, retryFailedSyncs: retryCustomerSync} = useCustomerStore();
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const [formData, setFormData] = useState(shopInfo);
     const [taxData, setTaxData] = useState<TaxSettings>(taxSettings);
@@ -58,6 +66,24 @@ export default function SettingsScreen() {
         });
         Alert.alert("Success", "Tax & VAT settings updated successfully!");
     };
+    
+    const handleManualSync = async () => {
+        setIsSyncing(true);
+        try {
+            // Push local failed/unsynced data
+            await retryOrderSync();
+            await retryCustomerSync();
+            
+            // Pull any cloud updates from other devices/cashiers
+            await pullCloudUpdates();
+            
+            Alert.alert("Sync Complete", "Cloud synchronization finished successfully.");
+        } catch (error) {
+            Alert.alert("Sync Error", "Something went wrong during synchronization. Please check your internet connection.");
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -77,6 +103,44 @@ export default function SettingsScreen() {
             </View>
 
             <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
+
+                {/* Cloud Sync Section */}
+                <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest">
+                    Cloud Synchronization
+                </Text>
+
+                <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                    <View className="flex-row items-center gap-3 mb-4">
+                        <View className="bg-emerald-50 dark:bg-emerald-900/20 p-2.5 rounded-full">
+                            <Ionicons name="cloud-done-outline" size={24} color="#10b981" />
+                        </View>
+                        <View className="flex-1">
+                            <Text className="font-bold text-slate-800 dark:text-white text-base">Backend Sync</Text>
+                            <Text className="text-slate-500 text-xs mt-0.5">
+                                Pending Uploads: {unsyncedOrders.length} Orders, {unsyncedCustomers.length} Customers
+                            </Text>
+                        </View>
+                    </View>
+                    
+                    <Text className="text-slate-500 text-xs mb-4 leading-5">
+                        Your app automatically syncs in the background. If you were offline, or want to pull updates from other devices, press sync.
+                    </Text>
+
+                    <TouchableOpacity
+                        onPress={handleManualSync}
+                        disabled={isSyncing}
+                        className={`${isSyncing ? 'bg-slate-300 dark:bg-slate-800' : 'bg-emerald-600'} p-4 rounded-xl items-center active:bg-emerald-700 flex-row justify-center gap-2`}
+                    >
+                        {isSyncing ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <Ionicons name="sync" size={20} color="white" />
+                        )}
+                        <Text className={`${isSyncing ? 'text-slate-500 dark:text-slate-400' : 'text-white'} font-bold text-base`}>
+                            {isSyncing ? 'Syncing with Cloud...' : 'Sync Now'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Shop Configuration Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest">
