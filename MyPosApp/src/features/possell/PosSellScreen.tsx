@@ -1,7 +1,8 @@
 import {useOrderStore} from "../../store/useOrderStore";
-import {useState} from "react";
-import {SafeAreaView} from "react-native-safe-area-context";
-import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput, Switch} from "react-native";
+import React, {useState} from "react";
+import { Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {Alert, FlatList, Image, Modal, ScrollView, Text, View, TextInput, Switch} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
 import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
@@ -13,7 +14,7 @@ import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
 
-export default function POSScreen() {
+const POSScreen = () => {
     const {
         filteredProducts,
         activeCategory,
@@ -39,7 +40,7 @@ export default function POSScreen() {
     const taxSettings = useSettingsStore(state => state.taxSettings);
     // @ts-ignore
     const loyaltySettings = useSettingsStore(state => state.loyaltySettings);
-
+    
     const {customers, addCustomer, addPointsToCustomer, deductPointsFromCustomer} = useCustomerStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
@@ -310,12 +311,12 @@ export default function POSScreen() {
 
                     <Text className="text-xl font-bold text-center text-slate-800 dark:text-white">New Sale</Text>
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={() => setIsScannerVisible(true)}
                         className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full"
                     >
                         <Ionicons name="scan" size={24} color="#2563eb"/>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {/* Categories */}
@@ -326,13 +327,13 @@ export default function POSScreen() {
                     keyExtractor={(item) => item}
                     contentContainerStyle={{paddingHorizontal: 15}}
                     renderItem={({item}) => (
-                        <TouchableOpacity
+                        <Pressable
                             onPress={() => filterByCategory(item)}
                             className={`mr-2 px-4 py-2 rounded-full border ${activeCategory === item ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'}`}
                         >
                             <Text
                                 className={activeCategory === item ? 'text-white' : 'text-slate-600 dark:text-slate-300'}>{item}</Text>
-                        </TouchableOpacity>
+                        </Pressable>
                     )}
                 />
             </View>
@@ -361,7 +362,7 @@ export default function POSScreen() {
 
             {/* Floating Bottom Cart Bar */}
             {cart.length > 0 && (
-                <TouchableOpacity
+                <Pressable
                     onPress={() => setIsCartVisible(true)}
                     className="absolute bottom-4 left-4 right-4 bg-slate-900 dark:bg-blue-600 p-4 rounded-2xl flex-row justify-between items-center shadow-lg"
                 >
@@ -372,7 +373,7 @@ export default function POSScreen() {
                         <Text className="text-white text-lg font-medium">View Cart</Text>
                     </View>
                     <Text className="text-white text-2xl font-bold">৳ {subTotal}</Text>
-                </TouchableOpacity>
+                </Pressable>
             )}
 
             {/* Cart Modal */}
@@ -381,9 +382,9 @@ export default function POSScreen() {
                     <View
                         className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50">
                         <Text className="text-2xl font-bold text-slate-800 dark:text-white">Current Order</Text>
-                        <TouchableOpacity onPress={() => setIsCartVisible(false)}>
+                        <Pressable onPress={() => setIsCartVisible(false)}>
                             <Ionicons name="close-circle" size={30} color="#94a3b8"/>
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
 
                     <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -409,25 +410,25 @@ export default function POSScreen() {
                                     </View>
                                     
                                     <View className="flex-col items-end gap-2">
-                                        <TouchableOpacity 
+                                        <Pressable
                                             onPress={() => removeFromCart(item.id)}
                                             className="absolute -top-2 -right-2 p-1 bg-red-100 dark:bg-red-900/30 rounded-full z-10"
                                         >
                                             <Ionicons name="trash-outline" size={16} color="#ef4444"/>
-                                        </TouchableOpacity>
+                                        </Pressable>
                                         <View
                                             className="flex-row items-center gap-3 bg-gray-100 dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mt-2">
-                                            <TouchableOpacity onPress={() => decreaseQuantity(item.id)}
+                                            <Pressable onPress={() => decreaseQuantity(item.id)}
                                                               className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
                                                 <Ionicons name="remove" size={16}
                                                           color={item.quantity === 1 ? '#ef4444' : '#64748b'}/>
-                                            </TouchableOpacity>
+                                            </Pressable>
                                             <Text
                                                 className="font-bold text-lg w-6 text-center text-slate-800 dark:text-white">{item.quantity}</Text>
-                                            <TouchableOpacity onPress={() => increaseQuantity(item.id)}
+                                            <Pressable onPress={() => increaseQuantity(item.id)}
                                                               className="p-2 bg-blue-600 rounded-lg shadow-sm">
                                                 <Ionicons name="add" size={16} color="white"/>
-                                            </TouchableOpacity>
+                                            </Pressable>
                                         </View>
                                     </View>
                                 </View>
@@ -461,7 +462,7 @@ export default function POSScreen() {
                                         }}
                                     />
                                     {searchQuery.length > 0 && (
-                                        <TouchableOpacity onPress={() => {
+                                        <Pressable onPress={() => {
                                             setSearchQuery('');
                                             setCustomerPhone('');
                                             setCustomerName('');
@@ -471,7 +472,7 @@ export default function POSScreen() {
                                             setShowCustomerDropdown(false);
                                         }}>
                                             <Ionicons name="close-circle" size={18} color="#94a3b8" />
-                                        </TouchableOpacity>
+                                        </Pressable>
                                     )}
                                 </View>
 
@@ -480,7 +481,7 @@ export default function POSScreen() {
                                     <View className="absolute top-[100%] left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl mt-1 shadow-lg max-h-40 z-50 overflow-hidden">
                                         <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                                             {filteredCustomers.map(c => (
-                                                <TouchableOpacity 
+                                                <Pressable
                                                     key={c.id} 
                                                     onPress={() => handleSelectCustomer(c)}
                                                     className="p-3 border-b border-gray-100 dark:border-slate-700 flex-row justify-between items-center"
@@ -492,7 +493,7 @@ export default function POSScreen() {
                                                     <View className="bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-md">
                                                         <Text className="text-amber-600 dark:text-amber-400 text-xs font-bold">{c.loyaltyPoints || 0} pts</Text>
                                                     </View>
-                                                </TouchableOpacity>
+                                                </Pressable>
                                             ))}
                                         </ScrollView>
                                     </View>
@@ -569,18 +570,19 @@ export default function POSScreen() {
                             
                             <View className="flex-row items-center gap-3">
                                 <View className="flex-row bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
-                                    <TouchableOpacity 
+                                    <Pressable
                                         onPress={() => setDiscountType('FIXED')}
                                         className={`px-4 py-2 rounded-lg ${discountType === 'FIXED' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
                                         <Text className={`font-bold ${discountType === 'FIXED' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>৳ Fixed</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
+                                    </Pressable>
+
+                                    <Pressable
                                         onPress={() => setDiscountType('PERCENTAGE')}
                                         className={`px-4 py-2 rounded-lg ${discountType === 'PERCENTAGE' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
                                         <Text className={`font-bold ${discountType === 'PERCENTAGE' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>% Percent</Text>
-                                    </TouchableOpacity>
+                                    </Pressable>
                                 </View>
                                 
                                 <TextInput 
@@ -643,15 +645,15 @@ export default function POSScreen() {
                         )}
 
                         <View className="flex-row gap-4">
-                            <TouchableOpacity onPress={clearCartModal}
+                            <Pressable onPress={clearCartModal}
                                 className="flex-1 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 dark:text-red-400 font-bold text-lg">Clear All</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={initiateCheckout}
+                            </Pressable>
+                            <Pressable onPress={initiateCheckout}
                                               className={`flex-[2] p-4 rounded-xl items-center shadow-md flex-row justify-center gap-2 ${isCheckoutEnabled() ? 'bg-blue-600 shadow-blue-500/30 active:bg-blue-700' : 'bg-slate-300 dark:bg-slate-700'}`}>
                                 <Text className={`${isCheckoutEnabled() ? 'text-white' : 'text-slate-500'} font-bold text-lg`}>Pay ৳ {finalTotal.toFixed(0)}</Text>
                                 <Ionicons name="arrow-forward" size={20} color={isCheckoutEnabled() ? "white" : "#64748b"} />
-                            </TouchableOpacity>
+                            </Pressable>
                         </View>
                         {!isCheckoutEnabled() && (
                             <Text className="text-rose-500 text-xs text-center mt-2 font-medium">Please provide valid customer details & points to checkout</Text>
@@ -681,3 +683,5 @@ export default function POSScreen() {
         </SafeAreaView>
     );
 }
+
+export default React.memo(POSScreen);

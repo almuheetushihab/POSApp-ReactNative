@@ -78,12 +78,12 @@ export const OrderSuccessModal = ({ visible, order, onClose }: OrderSuccessModal
                             </View>
                         )}
                         
-                        {order.pointsUsed && order.pointsUsed > 0 && (
+                        {order.pointsUsed ? (
                             <View className="flex-row justify-between mb-2">
                                 <Text className="text-amber-600">Points Redeemed</Text>
                                 <Text className="text-amber-700 font-bold">{order.pointsUsed} pts</Text>
                             </View>
-                        )}
+                        ) : null}
 
                         <View className="flex-row justify-between mb-2">
                             <Text className="text-slate-500">Date</Text>
