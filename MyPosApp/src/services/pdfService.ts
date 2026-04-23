@@ -29,7 +29,7 @@ export const pdfService = {
                  ${order.mfsDetails.transactionId ? `<p><span>TrxID:</span> <span>${order.mfsDetails.transactionId}</span></p>` : ''}
              `;
         } else if (order.paymentMethod === 'SPLIT' && order.splitPaymentDetails) {
-             paymentDetailsHtml = `<p style="font-weight: bold; margin-top: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Split Payment Breakdown:</p>`;
+             paymentDetailsHtml += `<p style="font-weight: bold; margin-top: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Split Payment Breakdown:</p>`;
              
              if (order.splitPaymentDetails.cashAmount > 0) {
                  paymentDetailsHtml += `<p><span>Cash:</span> <span>৳${order.splitPaymentDetails.cashAmount}</span></p>`;
@@ -41,6 +41,48 @@ export const pdfService = {
                  paymentDetailsHtml += `<p><span>MFS (${order.splitPaymentDetails.mfsDetails?.mfsType || 'N/A'}):</span> <span>৳${order.splitPaymentDetails.mfsAmount}</span></p>`;
              }
         }
+
+        // Generate Customer HTML
+        let customerHtml = '';
+        if (order.customer) {
+            customerHtml = `
+              <div class="invoice-details" style="margin-top: 10px;">
+                <p style="font-weight: bold; margin-bottom: 5px;">Customer Info:</p>
+                <p><span>Name:</span> <span>${order.customer.name}</span></p>
+                ${order.customer.phone ? `<p><span>Phone:</span> <span>${order.customer.phone}</span></p>` : ''}
+              </div>
+            `;
+        }
+
+        // Generate Discount HTML
+        let discountHtml = '';
+        if (order.discount && order.discount.amountCalculated > 0) {
+            const discountLabel = order.discount.type === 'PERCENTAGE' 
+                ? `Discount (${order.discount.value}%)` 
+                : 'Discount (Fixed)';
+            
+            discountHtml = `
+                <div class="row" style="color: #e11d48;">
+                  <span>${discountLabel}</span>
+                  <span>- ৳${order.discount.amountCalculated.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        // Generate Tax HTML
+        let taxHtml = '';
+        if (order.tax && order.tax.taxAmount > 0) {
+             const taxLabel = `${order.tax.taxName} (${order.tax.taxRate}%) ${order.tax.isInclusive ? '[Incl]' : '[Excl]'}`;
+             taxHtml = `
+                 <div class="row">
+                   <span>${taxLabel}</span>
+                   <span>${order.tax.isInclusive ? 'Included' : `+ ৳${order.tax.taxAmount.toFixed(2)}`}</span>
+                 </div>
+             `;
+        }
+
+        // Determine SubTotal
+        const subTotalVal = order.subTotal || (order.totalAmount + (order.discount?.amountCalculated || 0) - (order.tax && !order.tax.isInclusive ? order.tax.taxAmount : 0));
 
         return `
           <html>
@@ -83,6 +125,8 @@ export const pdfService = {
                 <p><span>Date:</span> <span>${new Date(order.date).toLocaleString()}</span></p>
               </div>
 
+              ${customerHtml}
+
               <table>
                 <thead>
                   <tr>
@@ -98,15 +142,13 @@ export const pdfService = {
               <div class="totals">
                 <div class="row">
                   <span>Subtotal</span>
-                  <span>৳${order.totalAmount}</span>
+                  <span>৳${subTotalVal.toFixed(2)}</span>
                 </div>
-                <div class="row">
-                  <span>VAT (0%)</span>
-                  <span>৳0</span>
-                </div>
+                ${discountHtml}
+                ${taxHtml}
                 <div class="row total">
                   <span>Total Paid</span>
-                  <span>৳${order.totalAmount}</span>
+                  <span>৳${order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
               
