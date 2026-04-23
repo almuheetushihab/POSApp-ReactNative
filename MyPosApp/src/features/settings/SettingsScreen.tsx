@@ -10,7 +10,6 @@ import {useSettingsStore, TaxSettings} from "../../store/useSettingsStore";
 import {useAuthStore} from "../../store/useAuthStore";
 import {useOrderStore} from "../../store/useOrderStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
-import {cloudSyncService} from "../../services/syncService";
 
 export default function SettingsScreen() {
     const router = useRouter();

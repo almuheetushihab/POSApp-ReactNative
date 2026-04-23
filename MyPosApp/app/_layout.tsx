@@ -21,6 +21,10 @@ export default function RootLayout() {
                 name="productdetails"
                 options={{ presentation: 'modal', headerShown: false }}
             />
+            <Stack.Screen
+                name="customerdetails"
+                options={{ presentation: 'modal', headerShown: false }}
+            />
         </Stack>
     );
 }
