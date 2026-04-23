@@ -1,7 +1,7 @@
 import {useTranslation} from "react-i18next";
 import {useOrderStore} from "../../store/useOrderStore";
 import {useCallback, useState} from "react";
-import {useFocusEffect} from "expo-router";
+// import {useFocusEffect} from "expo-router";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
@@ -29,6 +29,7 @@ export default function POSScreen() {
         addToCart,
         increaseQuantity,
         decreaseQuantity,
+        removeFromCart,
         getTotalPrice,
         getTotalItems,
         clearCart
@@ -52,11 +53,11 @@ export default function POSScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
-    useFocusEffect(
+    /* useFocusEffect(
         useCallback(() => {
             // Screen refresh logic if needed
         }, [])
-    );
+    ); */
 
     const handleScan = (scannedCode: string) => {
         const product = products.find(p => p.barcode === scannedCode);
@@ -275,7 +276,7 @@ export default function POSScreen() {
                             const item = getCartItemDetails(rawItem);
                             return (
                                 <View key={item.id}
-                                      className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800">
+                                      className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative">
                                     <View className="flex-row items-center gap-3 flex-1">
                                         <View
                                             className="h-12 w-12 bg-gray-100 dark:bg-slate-800 rounded-lg items-center justify-center overflow-hidden border border-gray-200 dark:border-slate-700">
@@ -285,24 +286,33 @@ export default function POSScreen() {
                                         </View>
                                         <View className="flex-1">
                                             <Text
-                                                className="font-bold text-slate-800 dark:text-white text-base" numberOfLines={1}>{item.name}</Text>
+                                                className="font-bold text-slate-800 dark:text-white text-base pr-8" numberOfLines={1}>{item.name}</Text>
                                             <Text
                                                 className="text-slate-500 dark:text-slate-400 font-medium">৳{item.price}</Text>
                                         </View>
                                     </View>
-                                    <View
-                                        className="flex-row items-center gap-3 bg-gray-100 dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700">
-                                        <TouchableOpacity onPress={() => decreaseQuantity(item.id)}
-                                                          className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
-                                            <Ionicons name="remove" size={16}
-                                                      color={item.quantity === 1 ? '#ef4444' : '#64748b'}/>
+                                    
+                                    <View className="flex-col items-end gap-2">
+                                        <TouchableOpacity 
+                                            onPress={() => removeFromCart(item.id)}
+                                            className="absolute -top-2 -right-2 p-1 bg-red-100 dark:bg-red-900/30 rounded-full z-10"
+                                        >
+                                            <Ionicons name="trash-outline" size={16} color="#ef4444"/>
                                         </TouchableOpacity>
-                                        <Text
-                                            className="font-bold text-lg w-6 text-center text-slate-800 dark:text-white">{item.quantity}</Text>
-                                        <TouchableOpacity onPress={() => increaseQuantity(item.id)}
-                                                          className="p-2 bg-blue-600 rounded-lg shadow-sm">
-                                            <Ionicons name="add" size={16} color="white"/>
-                                        </TouchableOpacity>
+                                        <View
+                                            className="flex-row items-center gap-3 bg-gray-100 dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mt-2">
+                                            <TouchableOpacity onPress={() => decreaseQuantity(item.id)}
+                                                              className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
+                                                <Ionicons name="remove" size={16}
+                                                          color={item.quantity === 1 ? '#ef4444' : '#64748b'}/>
+                                            </TouchableOpacity>
+                                            <Text
+                                                className="font-bold text-lg w-6 text-center text-slate-800 dark:text-white">{item.quantity}</Text>
+                                            <TouchableOpacity onPress={() => increaseQuantity(item.id)}
+                                                              className="p-2 bg-blue-600 rounded-lg shadow-sm">
+                                                <Ionicons name="add" size={16} color="white"/>
+                                            </TouchableOpacity>
+                                        </View>
                                     </View>
                                 </View>
                             );
