@@ -20,6 +20,11 @@ interface PaymentProcessingModalProps {
 export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfirm }: PaymentProcessingModalProps) {
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('CASH');
     
+    // Non-Split States
+    const [singleCashAmount, setSingleCashAmount] = useState('');
+    const [singleCardAmount, setSingleCardAmount] = useState('');
+    const [singleMfsAmount, setSingleMfsAmount] = useState('');
+
     // Split Payment States
     const [cashAmount, setCashAmount] = useState('');
     const [cardAmount, setCardAmount] = useState('');
@@ -39,6 +44,9 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
         if (visible) {
             // Reset states when modal opens
             setSelectedMethod('CASH');
+            setSingleCashAmount(totalAmount.toString());
+            setSingleCardAmount(totalAmount.toString());
+            setSingleMfsAmount(totalAmount.toString());
             setCashAmount('');
             setCardAmount('');
             setMfsAmount('');
@@ -49,7 +57,15 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
             setMfsPhoneNumber('');
             setMfsTransactionId('');
         }
-    }, [visible]);
+    }, [visible, totalAmount]);
+
+    // Live calculation for Non-Split payments (Return change)
+    const getChangeAmount = () => {
+        if (selectedMethod === 'CASH') return Math.max(0, (parseFloat(singleCashAmount) || 0) - totalAmount);
+        if (selectedMethod === 'CARD') return Math.max(0, (parseFloat(singleCardAmount) || 0) - totalAmount);
+        if (selectedMethod === 'MFS') return Math.max(0, (parseFloat(singleMfsAmount) || 0) - totalAmount);
+        return 0;
+    };
 
     // Live calculation for SPLIT payment
     const getSplitTotalEntered = () => {
@@ -60,20 +76,25 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
     };
     const splitTotalEntered = getSplitTotalEntered();
     const splitRemaining = Math.max(0, totalAmount - splitTotalEntered);
+    const splitChange = Math.max(0, splitTotalEntered - totalAmount);
 
     const isConfirmEnabled = () => {
-        if (selectedMethod === 'CASH') return true;
+        if (selectedMethod === 'CASH') {
+            return (parseFloat(singleCashAmount) || 0) >= totalAmount;
+        }
         
         if (selectedMethod === 'CARD') {
+            if ((parseFloat(singleCardAmount) || 0) < totalAmount) return false;
             return cardLast4.length === 4;
         }
         
         if (selectedMethod === 'MFS') {
+            if ((parseFloat(singleMfsAmount) || 0) < totalAmount) return false;
             return mfsPhoneNumber.length >= 11;
         }
         
         if (selectedMethod === 'SPLIT') {
-            if (splitTotalEntered !== totalAmount) return false;
+            if (splitTotalEntered < totalAmount) return false;
             const card = parseFloat(cardAmount) || 0;
             const mfs = parseFloat(mfsAmount) || 0;
             if (card > 0 && cardLast4.length !== 4) return false;
@@ -193,7 +214,7 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
         </View>
     );
 
-    const renderCardInputs = () => (
+    const renderCardInputs = (isSplit = false) => (
         <View className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-2xl mb-4 border border-indigo-100 dark:border-indigo-900/20">
             <Text className="font-bold text-indigo-800 dark:text-indigo-400 mb-3 text-sm">Card Details <Text className="text-red-500">*</Text></Text>
             {renderCardTypePills()}
@@ -226,7 +247,7 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
         </View>
     );
 
-    const renderMFSInputs = () => (
+    const renderMFSInputs = (isSplit = false) => (
         <View className="bg-rose-50 dark:bg-rose-900/10 p-5 rounded-2xl mb-4 border border-rose-100 dark:border-rose-900/20">
             <Text className="font-bold text-rose-800 dark:text-rose-400 mb-3 text-sm">Mobile Banking Details <Text className="text-red-500">*</Text></Text>
             {renderMFSTypePills()}
@@ -287,12 +308,23 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
                                  <Text className="text-white text-3xl font-extrabold">৳{totalAmount.toLocaleString()}</Text>
                              </View>
                              
-                             {selectedMethod === 'SPLIT' && (
-                                 <View className="items-end">
-                                      <Text className="text-blue-100 font-medium mb-1">Remaining</Text>
-                                      <Text className={`text-2xl font-extrabold ${splitRemaining === 0 ? 'text-green-300' : 'text-red-200'}`}>৳{splitRemaining.toLocaleString()}</Text>
-                                 </View>
-                             )}
+                             <View className="items-end">
+                                 {selectedMethod === 'SPLIT' ? (
+                                     <>
+                                         <Text className="text-blue-100 font-medium mb-1">
+                                             {splitRemaining === 0 ? 'Change' : 'Remaining'}
+                                         </Text>
+                                         <Text className={`text-2xl font-extrabold ${splitRemaining === 0 ? (splitChange > 0 ? 'text-yellow-300' : 'text-green-300') : 'text-red-200'}`}>
+                                             ৳{splitRemaining === 0 ? splitChange.toLocaleString() : splitRemaining.toLocaleString()}
+                                         </Text>
+                                     </>
+                                 ) : (
+                                     <>
+                                         <Text className="text-blue-100 font-medium mb-1">Change Return</Text>
+                                         <Text className="text-yellow-300 text-2xl font-extrabold">৳{getChangeAmount().toLocaleString()}</Text>
+                                     </>
+                                 )}
+                             </View>
                         </View>
                     </View>
 
@@ -307,11 +339,71 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
                             {renderPaymentOption('SPLIT', 'pie-chart-outline', 'Split Pay', 'bg-purple-500')}
                         </View>
 
-                        {/* FULL CARD DETAILS UI */}
-                        {selectedMethod === 'CARD' && renderCardInputs()}
+                        {/* SINGLE CASH UI */}
+                        {selectedMethod === 'CASH' && (
+                             <View className="mb-4">
+                                <Text className="text-slate-600 dark:text-slate-300 font-medium flex-row items-center mb-2">
+                                    <Ionicons name="cash-outline" size={16} color="#10b981" /> Received Cash Amount <Text className="text-red-500">*</Text>
+                                </Text>
+                                <TextInput
+                                    className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-slate-800 dark:text-white font-bold text-xl"
+                                    placeholder="৳0.00"
+                                    placeholderTextColor="#94a3b8"
+                                    keyboardType="numeric"
+                                    value={singleCashAmount}
+                                    onChangeText={setSingleCashAmount}
+                                />
+                                {(parseFloat(singleCashAmount) || 0) < totalAmount && (
+                                    <Text className="text-red-500 text-xs mt-1 font-medium">Received amount is less than total due.</Text>
+                                )}
+                            </View>
+                        )}
 
-                        {/* FULL MFS DETAILS UI */}
-                        {selectedMethod === 'MFS' && renderMFSInputs()}
+                        {/* SINGLE CARD UI */}
+                        {selectedMethod === 'CARD' && (
+                            <>
+                                <View className="mb-4">
+                                    <Text className="text-slate-600 dark:text-slate-300 font-medium flex-row items-center mb-2">
+                                        <Ionicons name="card-outline" size={16} color="#6366f1" /> Charged Card Amount <Text className="text-red-500">*</Text>
+                                    </Text>
+                                    <TextInput
+                                        className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-slate-800 dark:text-white font-bold text-xl"
+                                        placeholder="৳0.00"
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="numeric"
+                                        value={singleCardAmount}
+                                        onChangeText={setSingleCardAmount}
+                                    />
+                                    {(parseFloat(singleCardAmount) || 0) < totalAmount && (
+                                        <Text className="text-red-500 text-xs mt-1 font-medium">Charged amount is less than total due.</Text>
+                                    )}
+                                </View>
+                                {renderCardInputs(false)}
+                            </>
+                        )}
+
+                        {/* SINGLE MFS UI */}
+                        {selectedMethod === 'MFS' && (
+                            <>
+                                <View className="mb-4">
+                                    <Text className="text-slate-600 dark:text-slate-300 font-medium flex-row items-center mb-2">
+                                        <Ionicons name="phone-portrait-outline" size={16} color="#f43f5e" /> Received MFS Amount <Text className="text-red-500">*</Text>
+                                    </Text>
+                                    <TextInput
+                                        className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-slate-800 dark:text-white font-bold text-xl"
+                                        placeholder="৳0.00"
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="numeric"
+                                        value={singleMfsAmount}
+                                        onChangeText={setSingleMfsAmount}
+                                    />
+                                    {(parseFloat(singleMfsAmount) || 0) < totalAmount && (
+                                        <Text className="text-red-500 text-xs mt-1 font-medium">Received amount is less than total due.</Text>
+                                    )}
+                                </View>
+                                {renderMFSInputs(false)}
+                            </>
+                        )}
 
                         {/* SPLIT PAYMENT UI */}
                         {selectedMethod === 'SPLIT' && (
@@ -363,7 +455,7 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
                                         value={cardAmount}
                                         onChangeText={setCardAmount}
                                     />
-                                    {parseFloat(cardAmount) > 0 && renderCardInputs()}
+                                    {parseFloat(cardAmount) > 0 && renderCardInputs(true)}
                                 </View>
 
                                 {/* MFS Split */}
@@ -386,7 +478,7 @@ export function PaymentProcessingModal({ visible, totalAmount, onClose, onConfir
                                         value={mfsAmount}
                                         onChangeText={setMfsAmount}
                                     />
-                                    {parseFloat(mfsAmount) > 0 && renderMFSInputs()}
+                                    {parseFloat(mfsAmount) > 0 && renderMFSInputs(true)}
                                 </View>
                             </View>
                         )}
