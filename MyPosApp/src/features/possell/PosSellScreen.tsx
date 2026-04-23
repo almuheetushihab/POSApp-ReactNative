@@ -13,6 +13,7 @@ import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymen
 import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
+import {useCustomerStore} from "../../store/useCustomerStore";
 
 export default function POSScreen() {
     const {t} = useTranslation();
@@ -36,6 +37,7 @@ export default function POSScreen() {
     } = useCartStore();
     const {addOrder} = useOrderStore();
     const {taxSettings} = useSettingsStore();
+    const {customers, addCustomer} = useCustomerStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
@@ -48,6 +50,8 @@ export default function POSScreen() {
     // Customer States
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Receipt Modal States
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -118,10 +122,31 @@ export default function POSScreen() {
         ? totalAfterDiscount + taxAmount 
         : totalAfterDiscount;
 
+    const isCheckoutEnabled = () => {
+        if (cart.length === 0) return false;
+        // Make customer required (either select from list or enter new name & phone)
+        if (!customerName.trim() || !customerPhone.trim()) return false;
+        return true;
+    };
+
     const initiateCheckout = () => {
-        if (cart.length === 0) return;
+        if (!isCheckoutEnabled()) {
+            Alert.alert("Missing Info", "Please provide customer name and phone number to proceed.");
+            return;
+        }
         setIsPaymentModalVisible(true);
     };
+
+    const handleSelectCustomer = (customer: CustomerDetails) => {
+        setCustomerName(customer.name);
+        setCustomerPhone(customer.phone);
+        setSearchQuery(customer.phone);
+        setShowCustomerDropdown(false);
+    };
+
+    const filteredCustomers = customers.filter(
+        c => c.phone.includes(searchQuery) || c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const finalizeOrder = (
         method: PaymentMethod,
@@ -133,10 +158,19 @@ export default function POSScreen() {
     ) => {
         reduceStock(cart);
         
-        const customer: CustomerDetails | undefined = (customerName || customerPhone) ? {
-            name: customerName || 'Guest',
+        // Ensure customer is saved to store if it's new
+        const existingCustomer = customers.find(c => c.phone === customerPhone);
+        if (!existingCustomer) {
+            addCustomer({
+                name: customerName,
+                phone: customerPhone
+            });
+        }
+
+        const customer: CustomerDetails = {
+            name: customerName,
             phone: customerPhone
-        } : undefined;
+        };
 
         const discount: DiscountDetails | undefined = val > 0 ? {
             type: discountType,
@@ -177,6 +211,7 @@ export default function POSScreen() {
         setDiscountValueStr('');
         setCustomerName('');
         setCustomerPhone('');
+        setSearchQuery('');
 
         setTimeout(() => {
             setShowSuccessModal(true);
@@ -263,20 +298,20 @@ export default function POSScreen() {
             <Modal visible={isCartVisible} animationType="slide" presentationStyle="pageSheet">
                 <View className="flex-1 bg-gray-50 dark:bg-slate-950">
                     <View
-                        className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
+                        className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50">
                         <Text className="text-2xl font-bold text-slate-800 dark:text-white">Current Order</Text>
                         <TouchableOpacity onPress={() => setIsCartVisible(false)}>
                             <Ionicons name="close-circle" size={30} color="#94a3b8"/>
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
+                    <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                         {/* Cart Items List */}
                         {cart.map((rawItem) => {
                             const item = getCartItemDetails(rawItem);
                             return (
                                 <View key={item.id}
-                                      className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative">
+                                      className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 relative z-10">
                                     <View className="flex-row items-center gap-3 flex-1">
                                         <View
                                             className="h-12 w-12 bg-gray-100 dark:bg-slate-800 rounded-lg items-center justify-center overflow-hidden border border-gray-200 dark:border-slate-700">
@@ -319,38 +354,82 @@ export default function POSScreen() {
                         })}
 
                         {/* Customer Selection Section */}
-                        <View className="mt-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
-                            <View className="flex-row items-center gap-2 mb-4">
-                                <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-                                <Text className="text-lg font-bold text-slate-800 dark:text-white">Customer Details (Optional)</Text>
+                        <View className="mt-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-50">
+                            <View className="flex-row items-center justify-between mb-4 z-50">
+                                <View className="flex-row items-center gap-2">
+                                    <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
+                                    <Text className="text-lg font-bold text-slate-800 dark:text-white">Customer Details</Text>
+                                </View>
+                                <Text className="text-rose-500 text-xs font-bold bg-rose-50 px-2 py-1 rounded-md">Required *</Text>
                             </View>
-                            <View className="flex-row gap-3">
+
+                            {/* Customer Search/Phone Field */}
+                            <View className="mb-3 z-50 relative">
+                                <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Search Phone Number</Text>
+                                <View className="flex-row items-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 z-50">
+                                    <Ionicons name="search" size={18} color="#94a3b8" />
+                                    <TextInput 
+                                        className="flex-1 p-3 text-slate-800 dark:text-white font-medium"
+                                        placeholder="Enter Phone Number..."
+                                        placeholderTextColor="#94a3b8"
+                                        keyboardType="phone-pad"
+                                        value={searchQuery}
+                                        onChangeText={(text) => {
+                                            setSearchQuery(text);
+                                            setCustomerPhone(text);
+                                            setShowCustomerDropdown(text.length > 0);
+                                        }}
+                                        onFocus={() => {
+                                            if (searchQuery.length > 0) setShowCustomerDropdown(true);
+                                        }}
+                                    />
+                                    {searchQuery.length > 0 && (
+                                        <TouchableOpacity onPress={() => {
+                                            setSearchQuery('');
+                                            setCustomerPhone('');
+                                            setCustomerName('');
+                                            setShowCustomerDropdown(false);
+                                        }}>
+                                            <Ionicons name="close-circle" size={18} color="#94a3b8" />
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+
+                                {/* Dropdown List */}
+                                {showCustomerDropdown && filteredCustomers.length > 0 && (
+                                    <View className="absolute top-[100%] left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl mt-1 shadow-lg max-h-40 z-50 overflow-hidden">
+                                        <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                                            {filteredCustomers.map(c => (
+                                                <TouchableOpacity 
+                                                    key={c.id} 
+                                                    onPress={() => handleSelectCustomer(c)}
+                                                    className="p-3 border-b border-gray-100 dark:border-slate-700 flex-row justify-between items-center"
+                                                >
+                                                    <Text className="text-slate-800 dark:text-white font-bold">{c.phone}</Text>
+                                                    <Text className="text-slate-500 text-xs">{c.name}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
+                                    </View>
+                                )}
+                            </View>
+
+                            <View className="flex-row gap-3 z-10">
                                 <View className="flex-1">
-                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Name</Text>
+                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Name <Text className="text-red-500">*</Text></Text>
                                     <TextInput 
                                         className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-white font-medium"
-                                        placeholder="Walk-in Customer"
+                                        placeholder="Full Name"
                                         placeholderTextColor="#94a3b8"
                                         value={customerName}
                                         onChangeText={setCustomerName}
-                                    />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Phone</Text>
-                                    <TextInput 
-                                        className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-white font-medium"
-                                        placeholder="01XXXXXXXXX"
-                                        placeholderTextColor="#94a3b8"
-                                        keyboardType="phone-pad"
-                                        value={customerPhone}
-                                        onChangeText={setCustomerPhone}
                                     />
                                 </View>
                             </View>
                         </View>
 
                         {/* Discount Section */}
-                        <View className="mt-4 mb-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+                        <View className="mt-4 mb-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-10">
                             <View className="flex-row items-center gap-2 mb-4">
                                 <Ionicons name="pricetag-outline" size={20} color="#f59e0b" />
                                 <Text className="text-lg font-bold text-slate-800 dark:text-white">Apply Discount</Text>
@@ -385,7 +464,7 @@ export default function POSScreen() {
                     </ScrollView>
 
                     {/* Bottom Summary & Actions */}
-                    <View className="p-6 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800">
+                    <View className="p-6 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-10">
                         <View className="flex-row justify-between mb-2">
                             <Text className="text-slate-500 font-medium">Subtotal</Text>
                             <Text className="text-slate-800 dark:text-white font-bold">৳ {subTotal}</Text>
@@ -421,17 +500,21 @@ export default function POSScreen() {
                                 setDiscountValueStr('');
                                 setCustomerName('');
                                 setCustomerPhone('');
+                                setSearchQuery('');
                                 setIsCartVisible(false);
                             }}
                                 className="flex-1 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 dark:text-red-400 font-bold text-lg">Clear All</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={initiateCheckout}
-                                              className="flex-[2] bg-blue-600 p-4 rounded-xl items-center shadow-md shadow-blue-500/30 active:bg-blue-700 flex-row justify-center gap-2">
-                                <Text className="text-white font-bold text-lg">Pay ৳ {finalTotal.toFixed(0)}</Text>
-                                <Ionicons name="arrow-forward" size={20} color="white" />
+                                              className={`flex-[2] p-4 rounded-xl items-center shadow-md flex-row justify-center gap-2 ${isCheckoutEnabled() ? 'bg-blue-600 shadow-blue-500/30 active:bg-blue-700' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                                <Text className={`${isCheckoutEnabled() ? 'text-white' : 'text-slate-500'} font-bold text-lg`}>Pay ৳ {finalTotal.toFixed(0)}</Text>
+                                <Ionicons name="arrow-forward" size={20} color={isCheckoutEnabled() ? "white" : "#64748b"} />
                             </TouchableOpacity>
                         </View>
+                        {!isCheckoutEnabled() && (
+                            <Text className="text-rose-500 text-xs text-center mt-2 font-medium">Customer name & phone are required to checkout</Text>
+                        )}
                     </View>
                 </View>
             </Modal>
