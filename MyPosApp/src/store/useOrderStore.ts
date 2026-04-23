@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Order, OrderStatus, RefundDetails } from '../types/order';
+import { Order, OrderStatus, RefundDetails, ExchangeDetails } from '../types/order';
 
 interface OrderState {
     orders: Order[];
@@ -10,6 +10,7 @@ interface OrderState {
     addOrder: (order: Order) => void;
     processRefund: (orderId: string, refundDetails: RefundDetails, isPartial?: boolean) => void;
     processReturn: (orderId: string, returnReason?: string) => void;
+    processExchange: (orderId: string, exchangeDetails: ExchangeDetails) => void;
     clearOrders: () => void;
     
     // Getters
@@ -72,14 +73,39 @@ export const useOrderStore = create<OrderState>()(
                 });
             },
 
+            processExchange: (orderId, exchangeDetails) => {
+                set((state) => {
+                    const updatedOrders = state.orders.map((order) => {
+                        if (order.id === orderId) {
+                            // Calculate the new total amount based on the price difference
+                            // If positive, customer paid more (increase total)
+                            // If negative, shop returned money (decrease total)
+                            const newTotal = order.totalAmount + exchangeDetails.priceDifference;
+                            
+                            return {
+                                ...order,
+                                status: 'EXCHANGED' as OrderStatus,
+                                totalAmount: newTotal,
+                                exchangeDetails: {
+                                    ...exchangeDetails,
+                                    exchangeDate: new Date().toISOString(),
+                                },
+                            };
+                        }
+                        return order;
+                    });
+                    
+                    return { orders: updatedOrders };
+                });
+            },
+
             getTodaySales: () => {
                 const today = new Date().toDateString();
                 return get().orders
                     .filter((o) => {
                         const isToday = new Date(o.date).toDateString() === today;
-                        // Exclude fully refunded/returned orders from today's active sales if needed
-                        // For accounting, you might just want COMPLETED sales, or handle partials
-                        return isToday && o.status === 'COMPLETED'; 
+                        // Allow COMPLETED and EXCHANGED (since exchanged updates total)
+                        return isToday && (o.status === 'COMPLETED' || o.status === 'EXCHANGED');
                     })
                     .reduce((sum, order) => sum + order.totalAmount, 0);
             },
