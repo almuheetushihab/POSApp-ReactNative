@@ -1,4 +1,3 @@
-
 import {useTranslation} from "react-i18next";
 import {useOrderStore} from "../../store/useOrderStore";
 import {useCallback, useState} from "react";
@@ -10,8 +9,9 @@ import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
-import {Order} from "../../types/order";
+import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymentDetails} from "../../types/order";
 import {ScannerModal} from "../../components/ScannerModal";
+import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 
 export default function POSScreen() {
     const {t} = useTranslation();
@@ -36,6 +36,7 @@ export default function POSScreen() {
 
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
+    const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
     // Receipt Modal States
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -70,26 +71,42 @@ export default function POSScreen() {
         return product ? {...cartItem, ...product} : cartItem;
     };
 
-    const handleCheckout = () => {
+    const initiateCheckout = () => {
         if (cart.length === 0) return;
+        setIsPaymentModalVisible(true);
+    };
+
+    const finalizeOrder = (
+        method: PaymentMethod,
+        details?: {
+            splitDetails?: SplitPaymentDetails;
+            cardDetails?: CardPaymentDetails;
+            mfsDetails?: MFSPaymentDetails;
+        }
+    ) => {
         reduceStock(cart);
         const newOrder: Order = {
             id: Date.now().toString(),
             items: cart,
             totalAmount: getTotalPrice(),
             date: new Date().toISOString(),
-            paymentMethod: 'CASH',
+            paymentMethod: method,
+            splitPaymentDetails: details?.splitDetails,
+            cardDetails: details?.cardDetails,
+            mfsDetails: details?.mfsDetails,
+            status: 'COMPLETED'
         };
 
         addOrder(newOrder);
         setLastOrder(newOrder);
 
+        setIsPaymentModalVisible(false);
         setIsCartVisible(false);
         clearCart();
 
         setTimeout(() => {
             setShowSuccessModal(true);
-        }, 300);
+        }, 500);
     };
 
     return (
@@ -229,7 +246,7 @@ export default function POSScreen() {
                                               className="flex-1 bg-red-100 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 font-bold text-lg">Clear</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleCheckout}
+                            <TouchableOpacity onPress={initiateCheckout}
                                               className="flex-2 bg-blue-600 p-4 rounded-xl items-center flex-grow active:bg-blue-700">
                                 <Text className="text-white font-bold text-lg">Checkout (৳ {getTotalPrice()})</Text>
                             </TouchableOpacity>
@@ -237,6 +254,13 @@ export default function POSScreen() {
                     </View>
                 </View>
             </Modal>
+
+            <PaymentProcessingModal
+                visible={isPaymentModalVisible}
+                totalAmount={getTotalPrice()}
+                onClose={() => setIsPaymentModalVisible(false)}
+                onConfirm={finalizeOrder}
+            />
 
             <OrderSuccessModal
                 visible={showSuccessModal}
