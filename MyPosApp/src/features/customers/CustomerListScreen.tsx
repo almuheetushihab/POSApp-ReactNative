@@ -5,13 +5,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCustomerStore } from '../../store/useCustomerStore';
 import { CustomerDetails } from '../../types/order';
+import { useSettingsStore } from '../../store/useSettingsStore';
+import { AddEditCustomerModal } from './AddEditCustomerModal';
 
 export default function CustomerListScreen() {
     const router = useRouter();
     const { customers } = useCustomerStore();
+    const { activeStoreId } = useSettingsStore();
     const [searchQuery, setSearchQuery] = useState('');
+    const [isModalVisible, setModalVisible] = useState(false);
 
-    const filteredCustomers = customers.filter(
+    // Filter customers by active store first, then by search query
+    const storeFilteredCustomers = customers.filter(c => c.storeId === activeStoreId);
+
+    const finalFilteredCustomers = storeFilteredCustomers.filter(
         c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             c.phone.includes(searchQuery)
@@ -44,7 +51,13 @@ export default function CustomerListScreen() {
             {/* Header */}
             <View className="flex-row items-center justify-between p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 shadow-sm">
                 <Text className="text-2xl font-bold text-slate-800 dark:text-white">Customers</Text>
-                <Text className="text-slate-500 font-medium">{filteredCustomers.length} found</Text>
+                <TouchableOpacity
+                    onPress={() => setModalVisible(true)}
+                    className="bg-blue-600 px-4 py-2 rounded-xl flex-row items-center gap-2"
+                >
+                    <Ionicons name="add" size={16} color="white" />
+                    <Text className="text-white font-bold">Add Customer</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Search Bar */}
@@ -63,16 +76,22 @@ export default function CustomerListScreen() {
 
             {/* Customer List */}
             <FlatList
-                data={filteredCustomers}
+                data={finalFilteredCustomers}
                 keyExtractor={(item) => item.id as string}
                 renderItem={renderCustomerItem}
                 contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
                 ListEmptyComponent={
                     <View className="items-center justify-center mt-20">
                         <Ionicons name="people-outline" size={50} color="#cbd5e1" />
-                        <Text className="text-slate-400 mt-2">No customers found.</Text>
+                        <Text className="text-slate-400 mt-2">No customers found in this store.</Text>
                     </View>
                 }
+            />
+            
+            <AddEditCustomerModal 
+                visible={isModalVisible}
+                onClose={() => setModalVisible(false)}
+                customerToEdit={null}
             />
         </SafeAreaView>
     );

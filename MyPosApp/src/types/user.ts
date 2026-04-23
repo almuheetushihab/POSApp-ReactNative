@@ -5,6 +5,7 @@ export interface User {
     name: string;
     pin: string; // In a real app, this would be a hashed password
     role: UserRole;
+    assignedStoreId: string; // The store this employee is assigned to
 }
 
 export interface AuthState {

@@ -20,6 +20,7 @@ import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
 import {Product} from "../../types/product";
 import {AddProductModal} from "../../components/AddProductModal";
+import { useSettingsStore } from '../../store/useSettingsStore';
 
 const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
@@ -27,9 +28,9 @@ export default function ProductsScreen() {
     const router = useRouter();
     const {t} = useTranslation();
     const [isCartVisible, setIsCartVisible] = useState(false);
+    const { activeStoreId } = useSettingsStore();
 
     const {
-        filteredProducts,
         isLoading,
         fetchProducts,
         searchProducts,
@@ -37,6 +38,32 @@ export default function ProductsScreen() {
         activeCategory,
         products
     } = useProductStore();
+
+    // Filter products based on the active store
+    const storeFilteredProducts = products.filter(p => p.storeId === activeStoreId);
+    
+    // Apply search and category filters on top of store-filtered products
+    const getFinalFilteredProducts = () => {
+        let finalProducts = storeFilteredProducts;
+        
+        // This assumes searchProducts and filterByCategory from the store now just return a string/category
+        // and the actual filtering logic is reapplied here.
+        // A better approach would be to pass the storeId to the store's filter functions.
+        // For now, we will re-filter for simplicity.
+        
+        const { searchQuery, activeCategory } = useProductStore.getState();
+
+        if (searchQuery) {
+            finalProducts = finalProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        }
+        if (activeCategory !== 'All') {
+            finalProducts = finalProducts.filter(p => p.category === activeCategory);
+        }
+        
+        return finalProducts;
+    };
+
+    const finalProducts = getFinalFilteredProducts();
 
     const {
         cart,
@@ -80,7 +107,7 @@ export default function ProductsScreen() {
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
             <View className="p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
                 <Text className="text-2xl font-bold text-slate-800 dark:text-white mb-4">
-                    {t('products_title')} ({filteredProducts.length})
+                    {t('products_title')} ({finalProducts.length})
                 </Text>
 
                 <View
@@ -130,7 +157,7 @@ export default function ProductsScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={filteredProducts}
+                    data={finalProducts}
                     keyExtractor={(item) => item.id}
                     numColumns={2}
                     contentContainerStyle={{padding: 10, paddingBottom: 100}}
@@ -146,7 +173,7 @@ export default function ProductsScreen() {
                     ListEmptyComponent={
                         <View className="items-center mt-20">
                             <Ionicons name="cube-outline" size={50} color="#cbd5e1"/>
-                            <Text className="text-slate-400 mt-4">No products found</Text>
+                            <Text className="text-slate-400 mt-4">No products found in this store.</Text>
                         </View>
                     }
                 />

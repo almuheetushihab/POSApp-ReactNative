@@ -8,16 +8,24 @@ import {useOrderStore} from "../../store/useOrderStore";
 import {useProductStore} from "../../store/useProductStore";
 import {SalesChart} from "../../components/SalesChart";
 import {useAuthStore} from "../../store/useAuthStore";
+import {useSettingsStore, Store} from "../../store/useSettingsStore";
 
 export const DashboardScreen = () => {
     const router = useRouter();
     const {t} = useTranslation();
 
-    const {orders, getTodaySales, getTotalOrders} = useOrderStore();
+    const {orders, getTodaySales} = useOrderStore();
     const {products, fetchProducts} = useProductStore();
     const { user, hasPermission, logout } = useAuthStore();
+    const { stores, activeStoreId, setActiveStore } = useSettingsStore();
 
     const [refreshing, setRefreshing] = useState(false);
+    const [isStoreSwitcherVisible, setStoreSwitcherVisible] = useState(false);
+
+    // Filter data based on active store
+    const activeStore = stores.find(s => s.id === activeStoreId);
+    const storeFilteredOrders = orders.filter(o => o.storeId === activeStoreId);
+    const storeFilteredProducts = products.filter(p => p.storeId === activeStoreId);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -28,12 +36,14 @@ export const DashboardScreen = () => {
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
+        // In a real app, fetchProducts would be filtered by storeId on the backend
         await fetchProducts();
         setRefreshing(false);
     }, []);
 
     useFocusEffect(
         useCallback(() => {
+            // Any logic to run when screen is focused
         }, [])
     );
 
@@ -55,10 +65,16 @@ export const DashboardScreen = () => {
         );
     };
 
+    const handleStoreChange = (storeId: string) => {
+        setActiveStore(storeId);
+        setStoreSwitcherVisible(false);
+    };
+
     // RBAC logic to hide/show UI parts
     const canViewAnalytics = hasPermission(['Admin', 'Manager']);
     const canViewProducts = hasPermission(['Admin', 'Manager']);
     const canViewSettings = hasPermission(['Admin']);
+    const canSwitchStores = hasPermission(['Admin']); // Only Admins can switch between stores
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
@@ -103,6 +119,40 @@ export const DashboardScreen = () => {
                     </TouchableOpacity>
                 </View>
 
+                {/* Store Switcher (Admin only) */}
+                {canSwitchStores && (
+                    <View className="mb-6">
+                        <TouchableOpacity 
+                            onPress={() => setStoreSwitcherVisible(!isStoreSwitcherVisible)}
+                            className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-gray-200 dark:border-slate-700 flex-row justify-between items-center"
+                        >
+                            <View className="flex-row items-center gap-3">
+                                <Ionicons name="storefront-outline" size={20} color="#64748b" />
+                                <View>
+                                    <Text className="text-xs text-slate-500">Active Store</Text>
+                                    <Text className="text-base font-bold text-slate-800 dark:text-white">{activeStore?.name || 'Select Store'}</Text>
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-down" size={20} color="#64748b" />
+                        </TouchableOpacity>
+
+                        {isStoreSwitcherVisible && (
+                            <View className="bg-white dark:bg-slate-800 mt-2 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+                                {stores.map(store => (
+                                    <TouchableOpacity 
+                                        key={store.id}
+                                        onPress={() => handleStoreChange(store.id)}
+                                        className={`p-4 border-b border-gray-100 dark:border-slate-700 flex-row items-center ${activeStoreId === store.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                    >
+                                        <Ionicons name={activeStoreId === store.id ? 'radio-button-on' : 'radio-button-off'} size={20} color="#2563eb" className="mr-3" />
+                                        <Text className="text-slate-800 dark:text-white font-medium">{store.name}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
                 {/* Dashboard Analytics (Hidden for Cashiers) */}
                 {canViewAnalytics ? (
                     <>
@@ -120,7 +170,7 @@ export const DashboardScreen = () => {
                                     <Ionicons name="receipt-outline" size={18} color="white"/>
                                 </View>
                                 <Text className="text-orange-100 text-xs font-medium uppercase tracking-wider">{t('total_orders')}</Text>
-                                <Text className="text-white text-2xl font-bold mt-1">{getTotalOrders()}</Text>
+                                <Text className="text-white text-2xl font-bold mt-1">{storeFilteredOrders.length}</Text>
                             </View>
 
                             <View className="bg-emerald-500 w-[48%] p-4 rounded-2xl mb-4 shadow-sm">
@@ -128,7 +178,7 @@ export const DashboardScreen = () => {
                                     <Ionicons name="cube-outline" size={18} color="white"/>
                                 </View>
                                 <Text className="text-emerald-100 text-xs font-medium uppercase tracking-wider">{t('products')}</Text>
-                                <Text className="text-white text-2xl font-bold mt-1">{products.length}</Text>
+                                <Text className="text-white text-2xl font-bold mt-1">{storeFilteredProducts.length}</Text>
                             </View>
 
                             <View className="bg-rose-500 w-[48%] p-4 rounded-2xl mb-4 shadow-sm">
@@ -137,7 +187,7 @@ export const DashboardScreen = () => {
                                 </View>
                                 <Text className="text-rose-100 text-xs font-medium uppercase tracking-wider">Last Sale</Text>
                                 <Text className="text-white text-2xl font-bold mt-1">
-                                    ৳ {orders.length > 0 ? orders[0].totalAmount : 0}
+                                    ৳ {storeFilteredOrders.length > 0 ? storeFilteredOrders[0].totalAmount : 0}
                                 </Text>
                             </View>
                         </View>
@@ -200,7 +250,7 @@ export const DashboardScreen = () => {
                 </View>
 
                 {/* Recent Orders Preview */}
-                {orders.length > 0 && (
+                {storeFilteredOrders.length > 0 && (
                     <View className="mt-4">
                         <View className="flex-row justify-between items-center mb-3">
                             <Text className="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</Text>
@@ -210,7 +260,7 @@ export const DashboardScreen = () => {
                         </View>
 
                         {/* Show only top 3 recent orders */}
-                        {orders.slice(0, 3).map((order) => (
+                        {storeFilteredOrders.slice(0, 3).map((order) => (
                             <View key={order.id} className="flex-row justify-between items-center bg-white dark:bg-slate-900 p-4 mb-2 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm">
                                 <View className="flex-row items-center gap-3">
                                     <View className={`p-2 rounded-lg ${

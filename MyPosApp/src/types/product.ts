@@ -2,15 +2,10 @@ export interface Product {
     id: string;
     name: string;
     price: number;
+    stock: number;
     category: string;
     image?: string;
-    stock: number;
     barcode?: string;
-    sku?: string;
-}
-
-export interface ProductResponse {
-    success: boolean;
-    data: Product[];
-    message?: string;
+    description?: string;
+    storeId: string; // Which store this product belongs to
 }

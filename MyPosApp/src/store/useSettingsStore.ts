@@ -4,16 +4,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface TaxSettings {
     isEnabled: boolean;
-    taxRate: number; // e.g. 5, 10, 15 (Percentage)
-    taxName: string; // e.g. "VAT", "GST", "Sales Tax"
-    isInclusive: boolean; // if true, tax is already included in product price. If false, added on top of subtotal.
+    taxRate: number;
+    taxName: string;
+    isInclusive: boolean;
 }
 
 export interface LoyaltySettings {
     isEnabled: boolean;
-    pointsPerTaka: number; // How many points earned per Taka spent (e.g., 0.1 means 1 point for every 10 Taka)
-    takaPerPoint: number;  // How many Taka is 1 point worth for redemption (e.g., 1 means 1 point = 1 Taka discount)
-    minimumPointsToRedeem: number; // Minimum points a customer must have to be able to redeem
+    pointsPerTaka: number;
+    takaPerPoint: number;
+    minimumPointsToRedeem: number;
+}
+
+export interface Store {
+    id: string;
+    name: string;
+    address: string;
 }
 
 interface ShopInfo {
@@ -27,9 +33,12 @@ interface SettingsState {
     shopInfo: ShopInfo;
     taxSettings: TaxSettings;
     loyaltySettings: LoyaltySettings;
+    stores: Store[];
+    activeStoreId: string;
     updateShopInfo: (info: ShopInfo) => void;
     updateTaxSettings: (tax: TaxSettings) => void;
     updateLoyaltySettings: (loyalty: LoyaltySettings) => void;
+    setActiveStore: (storeId: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -49,13 +58,19 @@ export const useSettingsStore = create<SettingsState>()(
             },
             loyaltySettings: {
                 isEnabled: true,
-                pointsPerTaka: 0.1, // 1 point for every 10 Taka
-                takaPerPoint: 1,    // 1 point = 1 Taka
+                pointsPerTaka: 0.1,
+                takaPerPoint: 1,
                 minimumPointsToRedeem: 100,
             },
+            stores: [
+                { id: 'store_1', name: 'Dhaka Branch', address: 'Gulshan, Dhaka' },
+                { id: 'store_2', name: 'Chittagong Branch', address: 'Agrabad, Chittagong' },
+            ],
+            activeStoreId: 'store_1', // Default to the first store
             updateShopInfo: (info) => set({ shopInfo: info }),
             updateTaxSettings: (tax) => set({ taxSettings: tax }),
             updateLoyaltySettings: (loyalty) => set({ loyaltySettings: loyalty }),
+            setActiveStore: (storeId) => set({ activeStoreId: storeId }),
         }),
         {
             name: 'settings-storage',

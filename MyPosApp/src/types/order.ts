@@ -56,7 +56,6 @@ export interface TaxDetails {
 }
 
 export interface CustomerDetails {
-    loyaltyPoints: number;
     id?: string;
     name: string;
     phone: string;
@@ -64,10 +63,12 @@ export interface CustomerDetails {
     address?: string;
     loyaltyPoints?: number; // Total accumulated loyalty points
     totalSpent?: number; // Total money spent by the customer over time
+    storeId: string; // Which store this customer belongs to
 }
 
 export interface Order {
     id: string;
+    storeId: string; // Link to the store where the order was placed
     items: CartItem[];
     subTotal: number; // Sum of items price * quantity before discount
     discount?: DiscountDetails; // Information about any applied discount
