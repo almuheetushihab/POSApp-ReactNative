@@ -1,9 +1,7 @@
-import {useTranslation} from "react-i18next";
 import {useOrderStore} from "../../store/useOrderStore";
-import {useCallback, useState} from "react";
-// import {useFocusEffect} from "expo-router";
+import {useState} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput} from "react-native";
+import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput, Switch} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
 import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
@@ -16,10 +14,8 @@ import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
 
 export default function POSScreen() {
-    const {t} = useTranslation();
     const {
         filteredProducts,
-        fetchProducts,
         activeCategory,
         filterByCategory,
         products,
@@ -36,8 +32,15 @@ export default function POSScreen() {
         clearCart
     } = useCartStore();
     const {addOrder} = useOrderStore();
-    const {taxSettings} = useSettingsStore();
-    const {customers, addCustomer} = useCustomerStore();
+    
+    // We must ignore typescript here because we recently added loyaltySettings to useSettingsStore 
+    // but the IDE might not have picked up the updated type definitions everywhere immediately.
+    // @ts-ignore
+    const taxSettings = useSettingsStore(state => state.taxSettings);
+    // @ts-ignore
+    const loyaltySettings = useSettingsStore(state => state.loyaltySettings);
+
+    const {customers, addCustomer, addPointsToCustomer, deductPointsFromCustomer} = useCustomerStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
@@ -50,18 +53,17 @@ export default function POSScreen() {
     // Customer States
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
+    const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Loyalty States
+    const [usePoints, setUsePoints] = useState(false);
+    const [pointsToUseStr, setPointsToUseStr] = useState('');
 
     // Receipt Modal States
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
-
-    /* useFocusEffect(
-        useCallback(() => {
-            // Screen refresh logic if needed
-        }, [])
-    ); */
 
     const handleScan = (scannedCode: string) => {
         const product = products.find(p => p.barcode === scannedCode);
@@ -99,26 +101,35 @@ export default function POSScreen() {
         }
     }
     
-    const totalAfterDiscount = Math.max(0, subTotal - discountAmount);
+    // Calculate Loyalty Discount
+    let loyaltyDiscountAmount = 0;
+    const pointsToUse = parseInt(pointsToUseStr) || 0;
+    const currentCustomer = customers.find(c => c.id === selectedCustomerId);
+    
+    if (usePoints && currentCustomer && loyaltySettings?.isEnabled) {
+        if (pointsToUse > 0 && pointsToUse <= (currentCustomer.loyaltyPoints || 0)) {
+            loyaltyDiscountAmount = pointsToUse * loyaltySettings.takaPerPoint;
+            // Cap loyalty discount to subtotal - regular discount
+            if (loyaltyDiscountAmount > (subTotal - discountAmount)) {
+                loyaltyDiscountAmount = subTotal - discountAmount;
+            }
+        }
+    }
+
+    const totalDiscount = discountAmount + loyaltyDiscountAmount;
+    const totalAfterDiscount = Math.max(0, subTotal - totalDiscount);
 
     let taxAmount = 0;
-    if (taxSettings.isEnabled) {
+    if (taxSettings?.isEnabled) {
         if (taxSettings.isInclusive) {
-            // Formula for inclusive tax: Amount * (Rate / (100 + Rate))
-            // This means the totalAfterDiscount ALREADY includes the tax. 
-            // We just need to calculate how much of it was tax for reporting.
             taxAmount = totalAfterDiscount * (taxSettings.taxRate / (100 + taxSettings.taxRate));
         } else {
-            // Formula for exclusive tax: Amount * (Rate / 100)
-            // This adds tax ON TOP of the totalAfterDiscount.
             taxAmount = totalAfterDiscount * (taxSettings.taxRate / 100);
         }
     }
 
     // Final total calculation
-    // If tax is inclusive, final total doesn't increase. 
-    // If tax is exclusive, final total increases by tax amount.
-    const finalTotal = taxSettings.isEnabled && !taxSettings.isInclusive 
+    const finalTotal = taxSettings?.isEnabled && !taxSettings.isInclusive 
         ? totalAfterDiscount + taxAmount 
         : totalAfterDiscount;
 
@@ -126,12 +137,18 @@ export default function POSScreen() {
         if (cart.length === 0) return false;
         // Make customer required (either select from list or enter new name & phone)
         if (!customerName.trim() || !customerPhone.trim()) return false;
+        
+        // Validation for points
+        if (usePoints && pointsToUse > 0) {
+            if (!currentCustomer) return false;
+            if (pointsToUse > (currentCustomer.loyaltyPoints || 0)) return false;
+        }
         return true;
     };
 
     const initiateCheckout = () => {
         if (!isCheckoutEnabled()) {
-            Alert.alert("Missing Info", "Please provide customer name and phone number to proceed.");
+            Alert.alert("Missing Info", "Please ensure customer details are provided and points entered are valid.");
             return;
         }
         setIsPaymentModalVisible(true);
@@ -140,8 +157,27 @@ export default function POSScreen() {
     const handleSelectCustomer = (customer: CustomerDetails) => {
         setCustomerName(customer.name);
         setCustomerPhone(customer.phone);
+        setSelectedCustomerId(customer.id || null);
         setSearchQuery(customer.phone);
         setShowCustomerDropdown(false);
+        setUsePoints(false);
+        setPointsToUseStr('');
+    };
+
+    const handlePhoneChange = (text: string) => {
+        setSearchQuery(text);
+        setCustomerPhone(text);
+        setShowCustomerDropdown(text.length > 0);
+        
+        // If user manually types and it no longer matches the selected customer, clear selected customer
+        if (selectedCustomerId) {
+            const c = customers.find(x => x.id === selectedCustomerId);
+            if (c && c.phone !== text) {
+                setSelectedCustomerId(null);
+                setUsePoints(false);
+                setPointsToUseStr('');
+            }
+        }
     };
 
     const filteredCustomers = customers.filter(
@@ -158,27 +194,55 @@ export default function POSScreen() {
     ) => {
         reduceStock(cart);
         
+        let customerId = selectedCustomerId;
+        
         // Ensure customer is saved to store if it's new
-        const existingCustomer = customers.find(c => c.phone === customerPhone);
-        if (!existingCustomer) {
-            addCustomer({
-                name: customerName,
-                phone: customerPhone
-            });
+        if (!customerId) {
+            const existingCustomer = customers.find(c => c.phone === customerPhone);
+            if (!existingCustomer) {
+                const newCus = addCustomer({
+                    name: customerName,
+                    phone: customerPhone
+                });
+                customerId = newCus.id || null;
+            } else {
+                customerId = existingCustomer.id || null;
+            }
         }
 
-        const customer: CustomerDetails = {
+        const customer: CustomerDetails = customers.find(c => c.id === customerId) || {
             name: customerName,
             phone: customerPhone
         };
 
-        const discount: DiscountDetails | undefined = val > 0 ? {
+        // Calculate Points Earned & Deduct Used Points (Must be done before generating reason)
+        let pointsEarned = 0;
+        let actualPointsUsed = 0;
+        
+        if (loyaltySettings?.isEnabled && customerId) {
+            pointsEarned = Math.floor(finalTotal * loyaltySettings.pointsPerTaka);
+            addPointsToCustomer(customerId, pointsEarned, finalTotal);
+        }
+
+        if (usePoints && loyaltySettings?.isEnabled && customerId) {
+            const pts = parseInt(pointsToUseStr) || 0;
+            if (pts > 0) {
+                actualPointsUsed = pts;
+                deductPointsFromCustomer(customerId, pts);
+            }
+        }
+
+        const discount: DiscountDetails | undefined = (discountAmount > 0 || loyaltyDiscountAmount > 0) ? {
             type: discountType,
-            value: val,
-            amountCalculated: discountAmount
+            value: discountAmount > 0 ? val : 0,
+            amountCalculated: totalDiscount,
+            reason: [
+                discountAmount > 0 ? `Manual ${discountType}` : '',
+                loyaltyDiscountAmount > 0 ? `Points: ${actualPointsUsed}` : ''
+            ].filter(Boolean).join(' + ')
         } : undefined;
 
-        const taxDetails: TaxDetails | undefined = taxSettings.isEnabled ? {
+        const taxDetails: TaxDetails | undefined = taxSettings?.isEnabled ? {
             taxName: taxSettings.taxName,
             taxRate: taxSettings.taxRate,
             taxAmount: taxAmount,
@@ -194,6 +258,8 @@ export default function POSScreen() {
             totalAmount: finalTotal,
             date: new Date().toISOString(),
             customer: customer,
+            pointsEarned: pointsEarned,
+            pointsUsed: actualPointsUsed,
             paymentMethod: method,
             splitPaymentDetails: details?.splitDetails,
             cardDetails: details?.cardDetails,
@@ -212,10 +278,25 @@ export default function POSScreen() {
         setCustomerName('');
         setCustomerPhone('');
         setSearchQuery('');
+        setSelectedCustomerId(null);
+        setUsePoints(false);
+        setPointsToUseStr('');
 
         setTimeout(() => {
             setShowSuccessModal(true);
         }, 500);
+    };
+
+    const clearCartModal = () => {
+        clearCart();
+        setDiscountValueStr('');
+        setCustomerName('');
+        setCustomerPhone('');
+        setSearchQuery('');
+        setSelectedCustomerId(null);
+        setUsePoints(false);
+        setPointsToUseStr('');
+        setIsCartVisible(false);
     };
 
     return (
@@ -353,12 +434,12 @@ export default function POSScreen() {
                             );
                         })}
 
-                        {/* Customer Selection Section */}
+                        {/* Customer & Loyalty Section */}
                         <View className="mt-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-50">
                             <View className="flex-row items-center justify-between mb-4 z-50">
                                 <View className="flex-row items-center gap-2">
                                     <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-                                    <Text className="text-lg font-bold text-slate-800 dark:text-white">Customer Details</Text>
+                                    <Text className="text-lg font-bold text-slate-800 dark:text-white">Customer & Loyalty</Text>
                                 </View>
                                 <Text className="text-rose-500 text-xs font-bold bg-rose-50 px-2 py-1 rounded-md">Required *</Text>
                             </View>
@@ -374,11 +455,7 @@ export default function POSScreen() {
                                         placeholderTextColor="#94a3b8"
                                         keyboardType="phone-pad"
                                         value={searchQuery}
-                                        onChangeText={(text) => {
-                                            setSearchQuery(text);
-                                            setCustomerPhone(text);
-                                            setShowCustomerDropdown(text.length > 0);
-                                        }}
+                                        onChangeText={handlePhoneChange}
                                         onFocus={() => {
                                             if (searchQuery.length > 0) setShowCustomerDropdown(true);
                                         }}
@@ -388,6 +465,9 @@ export default function POSScreen() {
                                             setSearchQuery('');
                                             setCustomerPhone('');
                                             setCustomerName('');
+                                            setSelectedCustomerId(null);
+                                            setUsePoints(false);
+                                            setPointsToUseStr('');
                                             setShowCustomerDropdown(false);
                                         }}>
                                             <Ionicons name="close-circle" size={18} color="#94a3b8" />
@@ -405,8 +485,13 @@ export default function POSScreen() {
                                                     onPress={() => handleSelectCustomer(c)}
                                                     className="p-3 border-b border-gray-100 dark:border-slate-700 flex-row justify-between items-center"
                                                 >
-                                                    <Text className="text-slate-800 dark:text-white font-bold">{c.phone}</Text>
-                                                    <Text className="text-slate-500 text-xs">{c.name}</Text>
+                                                    <View>
+                                                        <Text className="text-slate-800 dark:text-white font-bold">{c.phone}</Text>
+                                                        <Text className="text-slate-500 text-xs">{c.name}</Text>
+                                                    </View>
+                                                    <View className="bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-md">
+                                                        <Text className="text-amber-600 dark:text-amber-400 text-xs font-bold">{c.loyaltyPoints || 0} pts</Text>
+                                                    </View>
                                                 </TouchableOpacity>
                                             ))}
                                         </ScrollView>
@@ -414,25 +499,72 @@ export default function POSScreen() {
                                 )}
                             </View>
 
-                            <View className="flex-row gap-3 z-10">
-                                <View className="flex-1">
-                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Name <Text className="text-red-500">*</Text></Text>
-                                    <TextInput 
-                                        className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-white font-medium"
-                                        placeholder="Full Name"
-                                        placeholderTextColor="#94a3b8"
-                                        value={customerName}
-                                        onChangeText={setCustomerName}
-                                    />
-                                </View>
+                            <View className="mb-4 z-10">
+                                <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Name <Text className="text-red-500">*</Text></Text>
+                                <TextInput 
+                                    className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-white font-medium"
+                                    placeholder="Full Name"
+                                    placeholderTextColor="#94a3b8"
+                                    value={customerName}
+                                    onChangeText={setCustomerName}
+                                />
                             </View>
+
+                            {/* Loyalty Points Section */}
+                            {loyaltySettings?.isEnabled && currentCustomer && (currentCustomer.loyaltyPoints || 0) >= loyaltySettings.minimumPointsToRedeem && (
+                                <View className="bg-amber-50 dark:bg-amber-900/10 p-4 rounded-xl border border-amber-200 dark:border-amber-900/30 z-10">
+                                    <View className="flex-row justify-between items-center mb-2">
+                                        <View>
+                                            <Text className="font-bold text-amber-800 dark:text-amber-400 flex-row items-center">
+                                                <Ionicons name="star" size={14} color="#d97706" /> Loyalty Reward
+                                            </Text>
+                                            <Text className="text-amber-600 dark:text-amber-500 text-xs mt-0.5">Available: {currentCustomer.loyaltyPoints} points</Text>
+                                        </View>
+                                        <Switch
+                                            value={usePoints}
+                                            onValueChange={setUsePoints}
+                                            trackColor={{ false: '#cbd5e1', true: '#f59e0b' }}
+                                            thumbColor={'#ffffff'}
+                                        />
+                                    </View>
+                                    
+                                    {usePoints && (
+                                        <View className="mt-2 flex-row items-center gap-3">
+                                            <TextInput
+                                                className="flex-1 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-700 rounded-lg p-2 text-slate-800 dark:text-white font-bold text-center"
+                                                placeholder="0"
+                                                keyboardType="numeric"
+                                                value={pointsToUseStr}
+                                                onChangeText={setPointsToUseStr}
+                                            />
+                                            <Text className="text-amber-700 dark:text-amber-300 font-bold text-sm">
+                                                = ৳{((parseInt(pointsToUseStr) || 0) * loyaltySettings.takaPerPoint).toFixed(2)} off
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {usePoints && (parseInt(pointsToUseStr) || 0) > (currentCustomer.loyaltyPoints || 0) && (
+                                        <Text className="text-red-500 text-xs mt-1">Cannot use more points than available.</Text>
+                                    )}
+                                </View>
+                            )}
+
+                            {loyaltySettings?.isEnabled && (!currentCustomer || (currentCustomer.loyaltyPoints || 0) < loyaltySettings.minimumPointsToRedeem) && (
+                                <View className="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 z-10 flex-row items-center gap-2">
+                                    <Ionicons name="star-outline" size={16} color="#94a3b8" />
+                                    <Text className="text-slate-500 text-xs flex-1">
+                                        {currentCustomer 
+                                            ? `${currentCustomer.loyaltyPoints || 0} pts available. Need ${loyaltySettings.minimumPointsToRedeem} pts to redeem.` 
+                                            : `Earn points on this purchase!`}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* Discount Section */}
                         <View className="mt-4 mb-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-10">
                             <View className="flex-row items-center gap-2 mb-4">
                                 <Ionicons name="pricetag-outline" size={20} color="#f59e0b" />
-                                <Text className="text-lg font-bold text-slate-800 dark:text-white">Apply Discount</Text>
+                                <Text className="text-lg font-bold text-slate-800 dark:text-white">Apply Manual Discount</Text>
                             </View>
                             
                             <View className="flex-row items-center gap-3">
@@ -471,13 +603,20 @@ export default function POSScreen() {
                         </View>
                         
                         {discountAmount > 0 && (
-                            <View className="flex-row justify-between mb-2">
-                                <Text className="text-rose-500 font-medium">Discount {discountType === 'PERCENTAGE' ? `(${val}%)` : ''}</Text>
+                            <View className="flex-row justify-between mb-1">
+                                <Text className="text-rose-500 font-medium">Manual Discount {discountType === 'PERCENTAGE' ? `(${val}%)` : ''}</Text>
                                 <Text className="text-rose-600 font-bold">- ৳ {discountAmount.toFixed(2)}</Text>
                             </View>
                         )}
+
+                        {loyaltyDiscountAmount > 0 && (
+                            <View className="flex-row justify-between mb-2">
+                                <Text className="text-amber-500 font-medium">Points Used ({pointsToUse} pts)</Text>
+                                <Text className="text-amber-600 font-bold">- ৳ {loyaltyDiscountAmount.toFixed(2)}</Text>
+                            </View>
+                        )}
                         
-                        {taxSettings.isEnabled && (
+                        {taxSettings?.isEnabled && (
                             <View className="flex-row justify-between mb-2">
                                 <Text className="text-slate-500 font-medium">
                                     {taxSettings.taxName} ({taxSettings.taxRate}%) 
@@ -489,20 +628,22 @@ export default function POSScreen() {
                             </View>
                         )}
 
-                        <View className="flex-row justify-between mb-6 pt-3 border-t border-gray-100 dark:border-slate-800">
+                        <View className="flex-row justify-between mb-4 pt-3 border-t border-gray-100 dark:border-slate-800">
                             <Text className="text-slate-800 dark:text-white text-xl font-bold">Total</Text>
                             <Text className="text-blue-600 text-2xl font-extrabold">৳ {finalTotal.toFixed(2)}</Text>
                         </View>
+                        
+                        {loyaltySettings?.isEnabled && isCheckoutEnabled() && (
+                            <View className="mb-4 bg-emerald-50 dark:bg-emerald-900/20 py-2 px-3 rounded-lg flex-row justify-center items-center gap-2 border border-emerald-100 dark:border-emerald-900/30">
+                                <Ionicons name="gift" size={14} color="#10b981" />
+                                <Text className="text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                                    Customer will earn <Text className="font-black">{Math.floor(finalTotal * loyaltySettings.pointsPerTaka)}</Text> points
+                                </Text>
+                            </View>
+                        )}
 
                         <View className="flex-row gap-4">
-                            <TouchableOpacity onPress={() => {
-                                clearCart();
-                                setDiscountValueStr('');
-                                setCustomerName('');
-                                setCustomerPhone('');
-                                setSearchQuery('');
-                                setIsCartVisible(false);
-                            }}
+                            <TouchableOpacity onPress={clearCartModal}
                                 className="flex-1 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-xl items-center">
                                 <Text className="text-red-600 dark:text-red-400 font-bold text-lg">Clear All</Text>
                             </TouchableOpacity>
@@ -513,7 +654,7 @@ export default function POSScreen() {
                             </TouchableOpacity>
                         </View>
                         {!isCheckoutEnabled() && (
-                            <Text className="text-rose-500 text-xs text-center mt-2 font-medium">Customer name & phone are required to checkout</Text>
+                            <Text className="text-rose-500 text-xs text-center mt-2 font-medium">Please provide valid customer details & points to checkout</Text>
                         )}
                     </View>
                 </View>

@@ -38,6 +38,24 @@ export const OrderSuccessModal = ({ visible, order, onClose }: OrderSuccessModal
                             <Text className="text-4xl font-bold text-slate-800">৳ {order.totalAmount}</Text>
                         </View>
 
+                        {/* Customer Info & Points */}
+                        {order.customer && (
+                            <View className="bg-amber-50 p-4 rounded-xl border border-amber-100 mb-6">
+                                <View className="flex-row items-center gap-2 mb-2">
+                                    <Ionicons name="person" size={16} color="#d97706" />
+                                    <Text className="font-bold text-amber-800">{order.customer.name}</Text>
+                                    <Text className="text-amber-600 text-xs ml-auto">{order.customer.phone}</Text>
+                                </View>
+                                
+                                {order.pointsEarned ? (
+                                    <View className="flex-row items-center gap-1 mt-1">
+                                        <Ionicons name="star" size={12} color="#f59e0b" />
+                                        <Text className="text-amber-700 text-xs font-bold">Earned {order.pointsEarned} loyalty points!</Text>
+                                    </View>
+                                ) : null}
+                            </View>
+                        )}
+
                         <View className="border-t border-dashed border-gray-300 my-2" />
 
                         <Text className="text-slate-400 text-xs font-bold uppercase mb-3 mt-4">Items Purchased</Text>
@@ -51,6 +69,21 @@ export const OrderSuccessModal = ({ visible, order, onClose }: OrderSuccessModal
                         ))}
 
                         <View className="border-t border-dashed border-gray-300 my-4" />
+
+                        {/* Summary & Discounts */}
+                        {order.discount && (
+                            <View className="flex-row justify-between mb-2">
+                                <Text className="text-rose-500">Discount</Text>
+                                <Text className="text-rose-600 font-bold">- ৳{order.discount.amountCalculated}</Text>
+                            </View>
+                        )}
+                        
+                        {order.pointsUsed && order.pointsUsed > 0 && (
+                            <View className="flex-row justify-between mb-2">
+                                <Text className="text-amber-600">Points Redeemed</Text>
+                                <Text className="text-amber-700 font-bold">{order.pointsUsed} pts</Text>
+                            </View>
+                        )}
 
                         <View className="flex-row justify-between mb-2">
                             <Text className="text-slate-500">Date</Text>

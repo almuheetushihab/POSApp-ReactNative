@@ -56,11 +56,14 @@ export interface TaxDetails {
 }
 
 export interface CustomerDetails {
+    loyaltyPoints: number;
     id?: string;
     name: string;
     phone: string;
     email?: string;
     address?: string;
+    loyaltyPoints?: number; // Total accumulated loyalty points
+    totalSpent?: number; // Total money spent by the customer over time
 }
 
 export interface Order {
@@ -74,6 +77,8 @@ export interface Order {
     
     // Customer Info
     customer?: CustomerDetails;
+    pointsEarned?: number; // Points earned from this specific order
+    pointsUsed?: number;   // Points used as discount in this specific order
 
     // Payment Info
     paymentMethod: PaymentMethod;
