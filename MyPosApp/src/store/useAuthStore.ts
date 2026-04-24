@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserRole, AuthState } from '../types/user';
+import { auth } from '../services/firebaseConfig'; // Import Firebase auth instance
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
-// Mock Users Database
+// Mock Users Database (can be removed if using Firebase for all user management)
 const MOCK_USERS: User[] = [
     { id: '1', name: 'Super Admin', email: 'admin@mypos.com', password: 'password', role: 'Admin' },
     { id: '2', name: 'Store Manager', email: 'manager@mypos.com', password: 'password', role: 'Manager' },
@@ -12,9 +14,9 @@ const MOCK_USERS: User[] = [
 
 interface AuthStoreState extends AuthState {
     login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-    loginWithGoogle: () => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
+    setFirebaseUser: (firebaseUser: FirebaseUser | null) => void;
 }
 
 export const useAuthStore = create<AuthStoreState>()(
@@ -37,22 +39,25 @@ export const useAuthStore = create<AuthStoreState>()(
                 }
             },
 
-            loginWithGoogle: async () => {
-                // In a real app, this would involve exchanging a token from expo-auth-session
-                // with your backend to get a user profile and JWT.
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                
-                // For this demo, we'll log in as the Manager user.
-                const user = MOCK_USERS.find(u => u.role === 'Manager');
-                if (user) {
-                    const mockToken = `jwt-token-google-${user.id}-${Date.now()}`;
-                    set({ isAuthenticated: true, user, token: mockToken });
-                    return { success: true };
+            setFirebaseUser: (firebaseUser) => {
+                if (firebaseUser) {
+                    // In a real app, you might fetch additional user details (like role) from your own backend
+                    // using the firebaseUser.uid
+                    const appUser: User = {
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Google User',
+                        email: firebaseUser.email || '',
+                        role: 'Manager', // Default role for Google sign-in for now
+                        avatarUrl: firebaseUser.photoURL || undefined,
+                    };
+                    set({ isAuthenticated: true, user: appUser, token: firebaseUser.refreshToken });
+                } else {
+                    set({ isAuthenticated: false, user: null, token: null });
                 }
-                return { success: false, message: 'Mock Google user not found' };
             },
 
-            logout: () => {
+            logout: async () => {
+                await auth.signOut();
                 set({ isAuthenticated: false, user: null, token: null });
             },
 
@@ -68,3 +73,8 @@ export const useAuthStore = create<AuthStoreState>()(
         }
     )
 );
+
+// Listen for Firebase auth state changes and update the store
+onAuthStateChanged(auth, (user) => {
+    useAuthStore.getState().setFirebaseUser(user);
+});

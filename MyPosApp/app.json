@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "MyPosApp",
-    "slug": "MyPosApp",
-    "scheme": "myapp",
+    "slug": "myposapp",
+    "scheme": "com.almuheetu.myposapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.almuheetu.MyPosApp"
+      "bundleIdentifier": "com.almuheetu.myposapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,6 +33,11 @@
       "expo-font",
       "expo-asset",
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d9d9c406-fc40-4087-9c3d-a45be214d37a"
+      }
+    }
   }
 }

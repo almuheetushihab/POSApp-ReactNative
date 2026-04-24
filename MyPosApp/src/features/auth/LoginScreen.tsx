@@ -1,26 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, Alert, TextInput, TouchableOpacity,
     TouchableWithoutFeedback, Keyboard, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from "../../store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
+import { useGoogleSignIn } from '../../services/authService';
 
-// In a real app, you'd get these from your Google Cloud Console
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const WEB_CLIENT_ID = '1095744732273-0r4d6i5qdrlcvruounpgkmeg14tcrf6d.apps.googleusercontent.com';
+const IOS_CLIENT_ID = '1095744732273-n91p6rosl6im05bgaugnt7d3f1as1m90.apps.googleusercontent.com';
+const ANDROID_CLIENT_ID = '1095744732273-321qprauptqmokmf6ha58d710qspv2d3.apps.googleusercontent.com';
 
 export const LoginScreen = () => {
     const router = useRouter();
-    const { t } = useTranslation();
-    const { login, loginWithGoogle } = useAuthStore();
+    const { login, user, isAuthenticated } = useAuthStore();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+    const { promptAsync, isSigningIn } = useGoogleSignIn(WEB_CLIENT_ID, IOS_CLIENT_ID, ANDROID_CLIENT_ID);
+
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            router.replace('/(tabs)/home');
+        }
+    }, [isAuthenticated, user, router]);
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
@@ -29,28 +36,11 @@ export const LoginScreen = () => {
         }
         
         setIsLoading(true);
-        // This is a mock login. In a real app, you'd call a backend endpoint.
         const result = await login(email, password);
         setIsLoading(false);
 
-        if (result.success) {
-            router.replace('/(tabs)/home');
-        } else {
+        if (!result.success) {
             Alert.alert('Login Failed', result.message || 'Invalid credentials. Please try again.');
-        }
-    };
-
-    const handleGoogleSignIn = async () => {
-        setIsGoogleLoading(true);
-        // This will be implemented with expo-auth-session in the next step
-        // For now, we simulate a successful login
-        const result = await loginWithGoogle();
-        setIsGoogleLoading(false);
-        
-        if (result.success) {
-            router.replace('/(tabs)/home');
-        } else {
-            Alert.alert('Google Sign-In Failed', result.message || 'Could not sign in with Google.');
         }
     };
 
@@ -130,11 +120,11 @@ export const LoginScreen = () => {
                 </View>
 
                 <TouchableOpacity
-                    onPress={handleGoogleSignIn}
-                    disabled={isGoogleLoading}
+                    onPress={() => promptAsync()}
+                    disabled={isSigningIn}
                     className="bg-white dark:bg-slate-800 p-4 rounded-2xl flex-row justify-center items-center border border-gray-200 dark:border-slate-700 shadow-sm"
                 >
-                    {isGoogleLoading ? (
+                    {isSigningIn ? (
                         <ActivityIndicator />
                     ) : (
                         <>
