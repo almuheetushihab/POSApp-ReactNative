@@ -31,6 +31,7 @@ const POSScreen = () => {
     
     const taxSettings = useSettingsStore(state => state.taxSettings);
     const loyaltySettings = useSettingsStore(state => state.loyaltySettings);
+    const activeStoreId = useSettingsStore(state => state.activeStoreId); // Get activeStoreId
     
     const {customers, addCustomer, updateCustomer} = useCustomerStore();
 
@@ -200,6 +201,7 @@ const POSScreen = () => {
                     loyaltyPoints: 0,
                     totalSpent: 0,
                     visitCount: 0,
+                    storeId: activeStoreId, // Add storeId to new customer
                 };
                 addCustomer(newCustomer);
                 customerToUpdate = newCustomer;
@@ -256,6 +258,7 @@ const POSScreen = () => {
 
         const newOrder: Order = {
             id: Date.now().toString(),
+            storeId: activeStoreId, // Add storeId to the order
             items: cart,
             subTotal: subTotal,
             totalAmount: finalTotal,
@@ -264,18 +267,14 @@ const POSScreen = () => {
             pointsEarned: pointsEarned,
             pointsUsed: actualPointsUsed,
             paymentMethod: method,
-            splitPaymentDetails: details?.splitDetails,
-            cardDetails: details?.cardDetails,
-            mfsDetails: details?.mfsDetails,
             status: 'COMPLETED'
         };
 
-        if (discountDetails) {
-            newOrder.discount = discountDetails;
-        }
-        if (taxDetails) {
-            newOrder.tax = taxDetails;
-        }
+        if (discountDetails) newOrder.discount = discountDetails;
+        if (taxDetails) newOrder.tax = taxDetails;
+        if (details?.splitDetails) newOrder.splitPaymentDetails = details.splitDetails;
+        if (details?.cardDetails) newOrder.cardDetails = details.cardDetails;
+        if (details?.mfsDetails) newOrder.mfsDetails = details.mfsDetails;
 
         addOrder(newOrder);
         setLastOrder(newOrder);

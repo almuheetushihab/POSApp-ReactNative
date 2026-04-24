@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import { ProductCard } from "../../components/ProductCard";
 import { useProductStore } from "../../store/useProductStore";
@@ -31,7 +31,14 @@ export default function ProductsScreen() {
     const { activeStoreId } = useSettingsStore();
 
     // Get products from the store
-    const { products, isLoaded } = useProductStore();
+    const { products, isLoaded, fetchInitialProducts } = useProductStore();
+
+    // Re-fetch data every time the screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchInitialProducts(true);
+        }, [])
+    );
 
     // Local state for filtering
     const [searchQuery, setSearchQuery] = useState('');
@@ -159,7 +166,7 @@ export default function ProductsScreen() {
                     ListEmptyComponent={
                         <View className="items-center mt-20">
                             <Ionicons name="cube-outline" size={50} color="#cbd5e1"/>
-                            <Text className="text-slate-400 mt-4">No products found in this store.</Text>
+                            <Text className="text-slate-400 mt-2">No products found in this store.</Text>
                         </View>
                     }
                 />

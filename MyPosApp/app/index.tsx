@@ -1,7 +1,6 @@
 import React from 'react';
 import { Redirect } from 'expo-router';
 import { useAuthStore } from '../src/store/useAuthStore';
-import { LoginScreen } from '../src/features/auth/LoginScreen';
 
 export default function App() {
     const { isAuthenticated } = useAuthStore();
@@ -11,6 +10,6 @@ export default function App() {
         return <Redirect href="/(tabs)/home" />;
     }
 
-    // Otherwise, show the login screen.
-    return <LoginScreen />;
+    // If not authenticated, redirect to the login page.
+    return <Redirect href="/login" />;
 }

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useCustomerStore } from '../../store/useCustomerStore';
 import { Customer } from '../../types/customer';
 import { useSettingsStore } from '../../store/useSettingsStore';
@@ -10,10 +10,17 @@ import { AddEditCustomerModal } from './AddEditCustomerModal';
 
 export default function CustomerListScreen() {
     const router = useRouter();
-    const { customers, isLoaded } = useCustomerStore();
+    const { customers, isLoaded, fetchInitialCustomers } = useCustomerStore();
     const { activeStoreId } = useSettingsStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
+
+    // Re-fetch data every time the screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchInitialCustomers(true);
+        }, [])
+    );
 
     // Filter customers by active store first, then by search query
     const storeFilteredCustomers = customers.filter(c => c.storeId === activeStoreId);

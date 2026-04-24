@@ -62,21 +62,25 @@ export const AddProductModal = ({visible, onClose, productToEdit}: AddProductMod
             return;
         }
 
-        const productData: Product = {
-            id: productToEdit ? productToEdit.id : Date.now().toString(),
+        const productData: Omit<Product, 'id'> & { id?: string } = {
             name,
             price: parseFloat(price),
             stock: parseInt(stock),
             category,
             barcode,
-            image: image || undefined
         };
 
+        if (image) {
+            productData.image = image;
+        }
+        
         if (productToEdit) {
-            updateProduct(productData);
+            productData.id = productToEdit.id;
+            updateProduct(productData as Product);
             Alert.alert("Updated", "Product updated successfully!");
         } else {
-            addProduct(productData);
+            productData.id = Date.now().toString();
+            addProduct(productData as Product);
             Alert.alert("Success", "Product added successfully!");
         }
 

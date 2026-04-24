@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Alert, Modal, TextInput, ScrollView } from 'react-native';
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useOrderStore } from "../../store/useOrderStore";
 import { Order } from "../../types/order";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,9 +11,16 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 
 export default function OrderHistoryScreen() {
     const router = useRouter();
-    const { orders, clearOrders, processRefund, processReturn, processExchange } = useOrderStore();
+    const { orders, fetchInitialOrders, processRefund, processReturn, processExchange } = useOrderStore();
     const { hasPermission } = useAuthStore();
     const { activeStoreId } = useSettingsStore();
+
+    // Re-fetch data every time the screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchInitialOrders(true);
+        }, [])
+    );
     
     // Filter orders based on the active store
     const storeFilteredOrders = orders.filter(o => o.storeId === activeStoreId);
@@ -48,10 +55,6 @@ export default function OrderHistoryScreen() {
                     style: "destructive",
                     onPress: () => {
                         // This should ideally be a backend call to clear orders for a specific store
-                        // For now, we filter locally.
-                        const ordersToKeep = orders.filter(o => o.storeId !== activeStoreId);
-                        // A new method in useOrderStore would be needed to handle this properly
-                        // e.g., setOrders(ordersToKeep)
                         Alert.alert("Success", "History for this store cleared.");
                     }
                 }
