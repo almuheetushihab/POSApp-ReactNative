@@ -3,9 +3,12 @@ export type UserRole = 'Admin' | 'Manager' | 'Cashier';
 export interface User {
     id: string;
     name: string;
-    pin: string; // In a real app, this would be a hashed password
+    email: string;
+    password?: string; // Hashed password from your backend
+    pin?: string; // Optional for PIN-based login
     role: UserRole;
-    assignedStoreId: string; // The store this employee is assigned to
+    assignedStoreId?: string; // The store this employee is assigned to
+    avatarUrl?: string; // Profile picture from Google or other providers
 }
 
 export interface AuthState {

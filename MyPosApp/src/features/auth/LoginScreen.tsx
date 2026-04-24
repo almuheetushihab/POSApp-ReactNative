@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, Alert, TextInput, TouchableOpacity,
-    TouchableWithoutFeedback, Keyboard, ActivityIndicator
+    TouchableWithoutFeedback, Keyboard, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
@@ -9,103 +9,142 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from "../../store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
 
+// In a real app, you'd get these from your Google Cloud Console
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
 export const LoginScreen = () => {
     const router = useRouter();
     const { t } = useTranslation();
-    const { login } = useAuthStore();
+    const { login, loginWithGoogle } = useAuthStore();
     
-    const [pin, setPin] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isFocused, setIsFocused] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (pin.length !== 4) {
-            Alert.alert('Error', 'Please enter a 4-digit PIN');
+        if (!email.trim() || !password.trim()) {
+            Alert.alert('Error', 'Please enter both email and password.');
             return;
         }
         
         setIsLoading(true);
-        const result = await login(pin);
+        // This is a mock login. In a real app, you'd call a backend endpoint.
+        const result = await login(email, password);
         setIsLoading(false);
 
         if (result.success) {
             router.replace('/(tabs)/home');
         } else {
-            Alert.alert('Failed', result.message || 'Login failed');
-            setPin(''); // Clear pin on fail
+            Alert.alert('Login Failed', result.message || 'Invalid credentials. Please try again.');
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        setIsGoogleLoading(true);
+        // This will be implemented with expo-auth-session in the next step
+        // For now, we simulate a successful login
+        const result = await loginWithGoogle();
+        setIsGoogleLoading(false);
+        
+        if (result.success) {
+            router.replace('/(tabs)/home');
+        } else {
+            Alert.alert('Google Sign-In Failed', result.message || 'Could not sign in with Google.');
         }
     };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-900 justify-center p-6">
+            <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950 justify-center p-6">
 
-                {/* Header Logo */}
                 <View className="items-center mb-10">
                     <View className="h-24 w-24 bg-blue-600 rounded-full items-center justify-center mb-4 shadow-lg shadow-blue-200 dark:shadow-none">
                         <Ionicons name="storefront" size={40} color="white" />
                     </View>
                     <Text className="text-3xl font-bold text-slate-800 dark:text-white text-center">
-                        MyPOS
+                        Welcome to MyPOS
                     </Text>
                     <Text className="text-slate-500 dark:text-slate-400 mt-2 text-center">
-                        Point of Sale System
+                        Sign in to continue
                     </Text>
                 </View>
 
                 <View className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700">
-                    <Text className="text-xl font-bold text-slate-800 dark:text-white mb-6 text-center">
-                        {t('welcome_back') || 'Welcome Back'}
-                    </Text>
-
-                    {/* Input Section */}
-                    <View className="w-full">
-                        <Text className="text-slate-700 dark:text-slate-300 font-medium mb-2 ml-1">
-                            {t('access_pin') || 'Access PIN'}
-                        </Text>
-
+                    
+                    <View className="mb-4">
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 font-bold">Email Address</Text>
                         <TextInput
-                            className={`w-full bg-gray-50 dark:bg-slate-900 p-4 rounded-2xl text-2xl text-center font-bold tracking-[0.5em] border-2 text-slate-800 dark:text-white
-                            ${isFocused ? 'border-blue-600' : 'border-gray-200 dark:border-slate-700'}`}
-                            value={pin}
-                            onChangeText={setPin}
-                            placeholder="••••"
+                            className="bg-gray-50 dark:bg-slate-900 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
+                            value={email}
+                            onChangeText={setEmail}
+                            placeholder="you@example.com"
                             placeholderTextColor="#94a3b8"
-                            keyboardType="numeric"
-                            secureTextEntry={true}
-                            maxLength={4}
-                            onFocus={() => setIsFocused(true)}
-                            onBlur={() => setIsFocused(false)}
+                            keyboardType="email-address"
+                            autoCapitalize="none"
                         />
+                    </View>
 
-                        {/* Login Button */}
-                        <TouchableOpacity
-                            onPress={handleLogin}
-                            disabled={isLoading}
-                            className={`mt-6 w-full p-4 rounded-2xl flex-row justify-center items-center shadow-md shadow-blue-200 dark:shadow-none
-                            ${isLoading ? 'bg-blue-400' : 'bg-blue-600'}`}
-                        >
-                            {isLoading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Ionicons name="log-in-outline" size={24} color="white" style={{ marginRight: 8 }} />
-                                    <Text className="text-white font-bold text-lg">
-                                        {t('login_btn') || 'Login securely'}
-                                    </Text>
-                                </>
-                            )}
+                    <View className="mb-6">
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 font-bold">Password</Text>
+                        <TextInput
+                            className="bg-gray-50 dark:bg-slate-900 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="••••••••"
+                            placeholderTextColor="#94a3b8"
+                            secureTextEntry
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={handleLogin}
+                        disabled={isLoading}
+                        className={`w-full p-4 rounded-2xl flex-row justify-center items-center shadow-md shadow-blue-200 dark:shadow-none
+                        ${isLoading ? 'bg-blue-400' : 'bg-blue-600'}`}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text className="text-white font-bold text-lg">
+                                Sign In
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+                    
+                    <View className="flex-row justify-between mt-4">
+                        <TouchableOpacity>
+                            <Text className="text-blue-600 text-xs font-bold">Forgot Password?</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity>
+                            <Text className="text-slate-500 text-xs font-bold">Create Account</Text>
                         </TouchableOpacity>
                     </View>
+
                 </View>
 
-                {/* Demo Hints */}
-                <View className="mt-8 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
-                    <Text className="text-blue-800 dark:text-blue-300 font-bold mb-2">Demo Accounts:</Text>
-                    <Text className="text-blue-600 dark:text-blue-400 text-xs mb-1">• Admin PIN: <Text className="font-bold">0000</Text> (Full Access)</Text>
-                    <Text className="text-blue-600 dark:text-blue-400 text-xs mb-1">• Manager PIN: <Text className="font-bold">1234</Text> (No Delete)</Text>
-                    <Text className="text-blue-600 dark:text-blue-400 text-xs">• Cashier PIN: <Text className="font-bold">1111</Text> (POS & History Only)</Text>
+                <View className="flex-row items-center my-8">
+                    <View className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
+                    <Text className="mx-4 text-slate-500 text-xs">OR</Text>
+                    <View className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
                 </View>
+
+                <TouchableOpacity
+                    onPress={handleGoogleSignIn}
+                    disabled={isGoogleLoading}
+                    className="bg-white dark:bg-slate-800 p-4 rounded-2xl flex-row justify-center items-center border border-gray-200 dark:border-slate-700 shadow-sm"
+                >
+                    {isGoogleLoading ? (
+                        <ActivityIndicator />
+                    ) : (
+                        <>
+                            <Ionicons name="logo-google" size={20} color="#ef4444" style={{ marginRight: 12 }} />
+                            <Text className="text-slate-800 dark:text-white font-bold text-base">
+                                Sign In with Google
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
 
                 <Text className="text-center text-slate-400 mt-auto text-xs">
                     Professional POS System v1.0
