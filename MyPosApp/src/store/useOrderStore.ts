@@ -6,18 +6,15 @@ import { cloudSyncService } from '../services/syncService';
 
 interface OrderState {
     orders: Order[];
-    unsyncedOrders: string[]; // Keep track of order IDs that failed to upload
+    isLoaded: boolean; // To check if initial data is loaded
     
     // Actions
-    addOrder: (order: Order) => void;
+    fetchInitialOrders: (force?: boolean) => Promise<void>;
+    addOrder: (order: Order) => Promise<void>;
     processRefund: (orderId: string, refundDetails: RefundDetails, isPartial?: boolean) => void;
     processReturn: (orderId: string, returnReason?: string) => void;
     processExchange: (orderId: string, exchangeDetails: ExchangeDetails) => void;
     clearOrders: () => void;
-    
-    // Cloud Sync
-    retryFailedSyncs: () => void;
-    pullCloudUpdates: () => void; // Called when multi-device sync happens
     
     // Getters
     getTodaySales: () => number;
@@ -29,7 +26,13 @@ export const useOrderStore = create<OrderState>()(
     persist(
         (set, get) => ({
             orders: [],
-            unsyncedOrders: [],
+            isLoaded: false,
+
+            fetchInitialOrders: async (force = false) => {
+                if (get().isLoaded && !force) return; // Prevent re-fetching unless forced
+                const cloudOrders = await cloudSyncService.fetchOrders();
+                set({ orders: cloudOrders, isLoaded: true });
+            },
 
             addOrder: async (order) => {
                 const newOrder: Order = {
@@ -40,17 +43,13 @@ export const useOrderStore = create<OrderState>()(
                 // Optimistically update the local UI first
                 set((state) => ({ 
                     orders: [newOrder, ...state.orders],
-                    unsyncedOrders: [...state.unsyncedOrders, newOrder.id] // Mark as unsynced initially
                 }));
                 
-                // Attempt to upload to Firebase/Supabase in the background
+                // Attempt to upload to Firebase in the background
                 const isSuccess = await cloudSyncService.syncOrder(newOrder);
-                
-                if (isSuccess) {
-                    // Remove from unsynced list if upload succeeded
-                    set((state) => ({
-                        unsyncedOrders: state.unsyncedOrders.filter(id => id !== newOrder.id)
-                    }));
+                if (!isSuccess) {
+                    // Handle failed sync if necessary (e.g., show a warning)
+                    console.warn(`Order ${newOrder.id} failed to sync.`);
                 }
             },
 
@@ -73,19 +72,11 @@ export const useOrderStore = create<OrderState>()(
                         return order;
                     });
                     
-                    return { 
-                        orders: updatedOrders,
-                        unsyncedOrders: [...state.unsyncedOrders, orderId] // Mark as unsynced for the update
-                    };
+                    return { orders: updatedOrders };
                 });
 
                 if (updatedOrder) {
-                    const isSuccess = await cloudSyncService.syncOrder(updatedOrder);
-                    if (isSuccess) {
-                        set((state) => ({
-                            unsyncedOrders: state.unsyncedOrders.filter(id => id !== orderId)
-                        }));
-                    }
+                    await cloudSyncService.syncOrder(updatedOrder);
                 }
             },
 
@@ -109,19 +100,11 @@ export const useOrderStore = create<OrderState>()(
                         return order;
                     });
                     
-                    return { 
-                        orders: updatedOrders,
-                        unsyncedOrders: [...state.unsyncedOrders, orderId]
-                    };
+                    return { orders: updatedOrders };
                 });
                 
                 if (updatedOrder) {
-                    const isSuccess = await cloudSyncService.syncOrder(updatedOrder);
-                    if (isSuccess) {
-                        set((state) => ({
-                            unsyncedOrders: state.unsyncedOrders.filter(id => id !== orderId)
-                        }));
-                    }
+                    await cloudSyncService.syncOrder(updatedOrder);
                 }
             },
 
@@ -131,7 +114,6 @@ export const useOrderStore = create<OrderState>()(
                 set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
-                            // Calculate the new total amount based on the price difference
                             const newTotal = order.totalAmount + exchangeDetails.priceDifference;
                             
                             updatedOrder = {
@@ -148,49 +130,12 @@ export const useOrderStore = create<OrderState>()(
                         return order;
                     });
                     
-                    return { 
-                        orders: updatedOrders,
-                        unsyncedOrders: [...state.unsyncedOrders, orderId]
-                    };
+                    return { orders: updatedOrders };
                 });
                 
                 if (updatedOrder) {
-                    const isSuccess = await cloudSyncService.syncOrder(updatedOrder);
-                    if (isSuccess) {
-                        set((state) => ({
-                            unsyncedOrders: state.unsyncedOrders.filter(id => id !== orderId)
-                        }));
-                    }
+                    await cloudSyncService.syncOrder(updatedOrder);
                 }
-            },
-
-            retryFailedSyncs: async () => {
-                const { unsyncedOrders, orders } = get();
-                if (unsyncedOrders.length === 0) return;
-                
-                console.log(`[SYNC] Retrying ${unsyncedOrders.length} failed orders...`);
-                
-                for (const orderId of [...unsyncedOrders]) {
-                    const orderToSync = orders.find(o => o.id === orderId);
-                    if (orderToSync) {
-                        const isSuccess = await cloudSyncService.syncOrder(orderToSync);
-                        if (isSuccess) {
-                            set((state) => ({
-                                unsyncedOrders: state.unsyncedOrders.filter(id => id !== orderId)
-                            }));
-                        }
-                    }
-                }
-            },
-
-            pullCloudUpdates: async () => {
-                 // Used when an admin clicks a 'Sync Now' button or app starts up
-                 const data = await cloudSyncService.fetchCloudData();
-                 if (data.orders && data.orders.length > 0) {
-                     // Normally you would merge local and cloud intelligently.
-                     // For example, resolving conflicts or picking the latest timestamp.
-                     console.log('[SYNC] Pulled orders from cloud:', data.orders.length);
-                 }
             },
 
             getTodaySales: () => {
@@ -198,8 +143,6 @@ export const useOrderStore = create<OrderState>()(
                 return get().orders
                     .filter((o) => {
                         const isToday = new Date(o.date).toDateString() === today;
-                        // Exclude fully refunded/returned orders from today's active sales if needed
-                        // Allow COMPLETED and EXCHANGED (since exchanged updates total)
                         return isToday && (o.status === 'COMPLETED' || o.status === 'EXCHANGED');
                     })
                     .reduce((sum, order) => sum + order.totalAmount, 0);
@@ -219,6 +162,7 @@ export const useOrderStore = create<OrderState>()(
         {
             name: 'order-storage',
             storage: createJSONStorage(() => AsyncStorage),
+            partialize: (state) => ({ orders: state.orders }),
         }
     )
 );

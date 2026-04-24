@@ -2,159 +2,57 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Product } from '../types/product';
-import { productService } from '../services/productService';
+import { cloudSyncService } from '../services/syncService';
 
 interface ProductState {
-    // States
     products: Product[];
-    filteredProducts: Product[];
-    isLoading: boolean;
-    activeCategory: string;
-    searchQuery: string;
-
-    // Actions
-    fetchProducts: () => Promise<void>;
-    filterByCategory: (category: string) => void;
-    searchProducts: (query: string) => void;
-    addProduct: (product: Product) => void;
-    updateProduct: (updatedProduct: Product) => void;
-    deleteProduct: (productId: string) => void;
-    reduceStock: (cartItems: any[]) => void;
+    isLoaded: boolean;
+    fetchInitialProducts: (force?: boolean) => Promise<void>;
+    addProduct: (product: Product) => Promise<void>;
+    updateProduct: (product: Product) => Promise<void>;
+    deleteProduct: (productId: string) => Promise<void>;
 }
 
 export const useProductStore = create<ProductState>()(
     persist(
         (set, get) => ({
             products: [],
-            filteredProducts: [],
-            isLoading: false,
-            activeCategory: 'All',
-            searchQuery: '',
+            isLoaded: false,
 
-            fetchProducts: async () => {
-                if (get().products.length > 0) {
-                    set({ filteredProducts: get().products });
-                    return;
-                }
-
-                set({ isLoading: true });
-                try {
-                    const response = await productService.getAllProducts();
-                    if (response.success) {
-                        set({
-                            products: response.data,
-                            filteredProducts: response.data,
-                            isLoading: false
-                        });
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch products', error);
-                    set({ isLoading: false });
-                }
+            fetchInitialProducts: async (force = false) => {
+                if (get().isLoaded && !force) return;
+                const cloudProducts = await cloudSyncService.fetchProducts();
+                set({ products: cloudProducts, isLoaded: true });
             },
 
-            filterByCategory: (category) => {
-                const { products, searchQuery } = get();
-                set({ activeCategory: category });
-
-                let result = category === 'All'
-                    ? products
-                    : products.filter((p) => p.category === category);
-
-                if (searchQuery) {
-                    const lowerQuery = searchQuery.toLowerCase();
-                    result = result.filter(p => 
-                        p.name.toLowerCase().includes(lowerQuery) ||
-                        (p.sku && p.sku.toLowerCase().includes(lowerQuery)) ||
-                        (p.barcode && p.barcode.toLowerCase().includes(lowerQuery))
-                    );
-                }
-
-                set({ filteredProducts: result });
+            addProduct: async (product) => {
+                set((state) => ({
+                    products: [...state.products, product],
+                }));
+                await cloudSyncService.syncProduct(product);
             },
 
-            searchProducts: (query) => {
-                const { products, activeCategory } = get();
-                set({ searchQuery: query });
-
-                const lowerQuery = query.toLowerCase();
-                
-                // Smart search: Check name, SKU, or barcode
-                let result = products.filter((p) =>
-                    p.name.toLowerCase().includes(lowerQuery) ||
-                    (p.sku && p.sku.toLowerCase().includes(lowerQuery)) ||
-                    (p.barcode && p.barcode.toLowerCase().includes(lowerQuery))
-                );
-
-                if (activeCategory !== 'All') {
-                    result = result.filter(p => p.category === activeCategory);
-                }
-
-                set({ filteredProducts: result });
+            updateProduct: async (product) => {
+                set((state) => ({
+                    products: state.products.map((p) => (p.id === product.id ? product : p)),
+                }));
+                await cloudSyncService.syncProduct(product);
             },
 
-            addProduct: (newProduct) => {
-                set((state) => {
-                    const updatedList = [newProduct, ...state.products];
-                    return {
-                        products: updatedList,
-                        filteredProducts: updatedList,
-                        activeCategory: 'All',
-                        searchQuery: ''
-                    };
-                });
-            },
-
-            updateProduct: (updatedProduct) => {
-                set((state) => {
-                    const newProducts = state.products.map((p) =>
-                        p.id === updatedProduct.id ? updatedProduct : p
-                    );
-
-                    const newFiltered = state.filteredProducts.map((p) =>
-                        p.id === updatedProduct.id ? updatedProduct : p
-                    );
-
-                    return { products: newProducts, filteredProducts: newFiltered };
-                });
-            },
-
-            deleteProduct: (productId) => {
-                set((state) => {
-                    const newProducts = state.products.filter((p) => p.id !== productId);
-                    const newFiltered = state.filteredProducts.filter((p) => p.id !== productId);
-                    return { products: newProducts, filteredProducts: newFiltered };
-                });
-            },
-
-            reduceStock: (cartItems) => {
-                set((state) => {
-                    const newProducts = state.products.map((product) => {
-                        const cartItem = cartItems.find((item) => item.id === product.id);
-                        if (cartItem) {
-                            return { ...product, stock: product.stock - cartItem.quantity };
-                        }
-                        return product;
-                    });
-
-                    const newFiltered = state.filteredProducts.map((product) => {
-                        const cartItem = cartItems.find((item) => item.id === product.id);
-                        if (cartItem) {
-                            return { ...product, stock: product.stock - cartItem.quantity };
-                        }
-                        return product;
-                    });
-
-                    return {
-                        products: newProducts,
-                        filteredProducts: newFiltered
-                    };
-                });
+            deleteProduct: async (productId) => {
+                set((state) => ({
+                    products: state.products.filter((p) => p.id !== productId),
+                }));
+                // Note: Deleting from Firestore is a destructive action.
+                // We might want to "soft delete" by setting a flag instead.
+                // For now, we assume a hard delete is fine.
+                // await cloudSyncService.deleteProduct(productId);
             },
         }),
         {
             name: 'product-storage',
             storage: createJSONStorage(() => AsyncStorage),
+            partialize: (state) => ({ products: state.products }),
         }
     )
 );

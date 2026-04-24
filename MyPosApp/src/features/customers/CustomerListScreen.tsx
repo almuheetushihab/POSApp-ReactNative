@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCustomerStore } from '../../store/useCustomerStore';
-import { CustomerDetails } from '../../types/order';
+import { Customer } from '../../types/customer';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { AddEditCustomerModal } from './AddEditCustomerModal';
 
 export default function CustomerListScreen() {
     const router = useRouter();
-    const { customers } = useCustomerStore();
+    const { customers, isLoaded } = useCustomerStore();
     const { activeStoreId } = useSettingsStore();
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
@@ -21,10 +21,10 @@ export default function CustomerListScreen() {
     const finalFilteredCustomers = storeFilteredCustomers.filter(
         c =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            c.phone.includes(searchQuery)
+            (c.phone && c.phone.includes(searchQuery))
     ).sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0)); // Sort by total spent
 
-    const renderCustomerItem = ({ item }: { item: CustomerDetails }) => (
+    const renderCustomerItem = ({ item }: { item: Customer }) => (
         <TouchableOpacity
             onPress={() => router.push({ pathname: '/customerdetails', params: { customerId: item.id } })}
             className="bg-white dark:bg-slate-900 p-4 mb-3 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex-row items-center"
@@ -75,18 +75,25 @@ export default function CustomerListScreen() {
             </View>
 
             {/* Customer List */}
-            <FlatList
-                data={finalFilteredCustomers}
-                keyExtractor={(item) => item.id as string}
-                renderItem={renderCustomerItem}
-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-                ListEmptyComponent={
-                    <View className="items-center justify-center mt-20">
-                        <Ionicons name="people-outline" size={50} color="#cbd5e1" />
-                        <Text className="text-slate-400 mt-2">No customers found in this store.</Text>
-                    </View>
-                }
-            />
+            {!isLoaded ? (
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#2563eb"/>
+                    <Text className="text-slate-400 mt-2">Loading Customers...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={finalFilteredCustomers}
+                    keyExtractor={(item) => item.id as string}
+                    renderItem={renderCustomerItem}
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+                    ListEmptyComponent={
+                        <View className="items-center justify-center mt-20">
+                            <Ionicons name="people-outline" size={50} color="#cbd5e1" />
+                            <Text className="text-slate-400 mt-2">No customers found in this store.</Text>
+                        </View>
+                    }
+                />
+            )}
             
             <AddEditCustomerModal 
                 visible={isModalVisible}

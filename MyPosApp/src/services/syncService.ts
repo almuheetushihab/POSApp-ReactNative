@@ -1,71 +1,81 @@
+import { doc, setDoc, getDocs, collection, writeBatch } from 'firebase/firestore';
+import { db } from './firebaseConfig';
 import { Order } from '../types/order';
-import { CustomerDetails } from '../types/order';
+import { Product } from '../types/product';
+import { Customer } from '../types/customer';
 
-// This is a placeholder mock service. In a real-world scenario, you would use
-// Firebase Firestore (firebase/firestore) or Supabase client here.
-
-class SyncService {
-    // Check if device is currently online
-    // React Native has 'NetInfo' or '@react-native-community/netinfo' 
-    // but for simplicity we will assume it's always online or use a basic variable
-    
-    // We mock a delay to simulate network latency
-    private delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-    /**
-     * Push a single order to the cloud backend
-     */
-    async syncOrder(order: Order): Promise<boolean> {
-        try {
-            console.log(`[SYNC] Pushing Order ${order.id} to cloud...`);
-            await this.delay(1000);
-            
-            // Example Firebase code:
-            // await firestore().collection('orders').doc(order.id).set(order);
-            
-            console.log(`[SYNC] Order ${order.id} synced successfully.`);
-            return true;
-        } catch (error) {
-            console.error(`[SYNC] Failed to sync order ${order.id}:`, error);
-            return false;
-        }
+const syncOrder = async (order: Order): Promise<boolean> => {
+    try {
+        const orderRef = doc(db, 'orders', order.id);
+        await setDoc(orderRef, order, { merge: true });
+        return true;
+    } catch (error) {
+        console.error("Failed to sync order:", error);
+        return false;
     }
+};
 
-    /**
-     * Push customer updates to the cloud backend
-     */
-    async syncCustomer(customer: CustomerDetails): Promise<boolean> {
-        if (!customer.id) return false;
-        
-        try {
-            console.log(`[SYNC] Pushing Customer ${customer.name} to cloud...`);
-            await this.delay(800);
-            
-            // Example Firebase code:
-            // await firestore().collection('customers').doc(customer.id).set(customer);
-            
-            console.log(`[SYNC] Customer ${customer.name} synced successfully.`);
-            return true;
-        } catch (error) {
-            console.error(`[SYNC] Failed to sync customer ${customer.name}:`, error);
-            return false;
-        }
+const fetchOrders = async (): Promise<Order[]> => {
+    try {
+        const ordersCollection = collection(db, 'orders');
+        const querySnapshot = await getDocs(ordersCollection);
+        return querySnapshot.docs.map(doc => doc.data() as Order);
+    } catch (error) {
+        console.error("Failed to fetch orders:", error);
+        return [];
     }
+};
 
-    /**
-     * Fetch the latest changes from the cloud (for multi-device sync)
-     */
-    async fetchCloudData() {
-        console.log(`[SYNC] Fetching latest data from cloud...`);
-        await this.delay(1500);
-        
-        // This is where you would pull down changes made by other cashiers.
-        // Example:
-        // const snapshot = await firestore().collection('orders').where('updatedAt', '>', lastSyncTime).get();
-        // snapshot.docs.map(doc => /* update local store */)
-        
-        return { orders: [], customers: [] };
+const syncProduct = async (product: Product): Promise<boolean> => {
+    try {
+        const productRef = doc(db, 'products', product.id);
+        await setDoc(productRef, product, { merge: true });
+        return true;
+    } catch (error) {
+        console.error("Failed to sync product:", error);
+        return false;
     }
-}
+};
 
-export const cloudSyncService = new SyncService();
+const fetchProducts = async (): Promise<Product[]> => {
+    try {
+        const productsCollection = collection(db, 'products');
+        const querySnapshot = await getDocs(productsCollection);
+        return querySnapshot.docs.map(doc => doc.data() as Product);
+    } catch (error) {
+        console.error("Failed to fetch products:", error);
+        return [];
+    }
+};
+
+const syncCustomer = async (customer: Customer): Promise<boolean> => {
+    try {
+        const customerRef = doc(db, 'customers', customer.id);
+        await setDoc(customerRef, customer, { merge: true });
+        return true;
+    } catch (error) {
+        console.error("Failed to sync customer:", error);
+        return false;
+    }
+};
+
+const fetchCustomers = async (): Promise<Customer[]> => {
+    try {
+        const customersCollection = collection(db, 'customers');
+        const querySnapshot = await getDocs(customersCollection);
+        return querySnapshot.docs.map(doc => doc.data() as Customer);
+    } catch (error) {
+        console.error("Failed to fetch customers:", error);
+        return [];
+    }
+};
+
+
+export const cloudSyncService = {
+    syncOrder,
+    fetchOrders,
+    syncProduct,
+    fetchProducts,
+    syncCustomer,
+    fetchCustomers,
+};

@@ -13,15 +13,10 @@ import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
+import { Customer } from "../../types/customer";
 
 const POSScreen = () => {
-    const {
-        filteredProducts,
-        activeCategory,
-        filterByCategory,
-        products,
-        reduceStock
-    } = useProductStore();
+    const { products } = useProductStore();
     const {
         cart,
         addToCart,
@@ -34,18 +29,15 @@ const POSScreen = () => {
     } = useCartStore();
     const {addOrder} = useOrderStore();
     
-    // We must ignore typescript here because we recently added loyaltySettings to useSettingsStore 
-    // but the IDE might not have picked up the updated type definitions everywhere immediately.
-    // @ts-ignore
     const taxSettings = useSettingsStore(state => state.taxSettings);
-    // @ts-ignore
     const loyaltySettings = useSettingsStore(state => state.loyaltySettings);
     
-    const {customers, addCustomer, addPointsToCustomer, deductPointsFromCustomer} = useCustomerStore();
+    const {customers, addCustomer, updateCustomer} = useCustomerStore();
 
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+    const [activeCategory, setActiveCategory] = useState('All');
 
     // Discount States
     const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED');
@@ -79,6 +71,10 @@ const POSScreen = () => {
 
     const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
+    const filteredProducts = activeCategory === 'All'
+        ? products
+        : products.filter(p => p.category === activeCategory);
+
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
         return item ? item.quantity : 0;
@@ -110,7 +106,6 @@ const POSScreen = () => {
     if (usePoints && currentCustomer && loyaltySettings?.isEnabled) {
         if (pointsToUse > 0 && pointsToUse <= (currentCustomer.loyaltyPoints || 0)) {
             loyaltyDiscountAmount = pointsToUse * loyaltySettings.takaPerPoint;
-            // Cap loyalty discount to subtotal - regular discount
             if (loyaltyDiscountAmount > (subTotal - discountAmount)) {
                 loyaltyDiscountAmount = subTotal - discountAmount;
             }
@@ -129,17 +124,14 @@ const POSScreen = () => {
         }
     }
 
-    // Final total calculation
     const finalTotal = taxSettings?.isEnabled && !taxSettings.isInclusive 
         ? totalAfterDiscount + taxAmount 
         : totalAfterDiscount;
 
     const isCheckoutEnabled = () => {
         if (cart.length === 0) return false;
-        // Make customer required (either select from list or enter new name & phone)
         if (!customerName.trim() || !customerPhone.trim()) return false;
         
-        // Validation for points
         if (usePoints && pointsToUse > 0) {
             if (!currentCustomer) return false;
             if (pointsToUse > (currentCustomer.loyaltyPoints || 0)) return false;
@@ -155,7 +147,7 @@ const POSScreen = () => {
         setIsPaymentModalVisible(true);
     };
 
-    const handleSelectCustomer = (customer: CustomerDetails) => {
+    const handleSelectCustomer = (customer: Customer) => {
         setCustomerName(customer.name);
         setCustomerPhone(customer.phone);
         setSelectedCustomerId(customer.id || null);
@@ -170,7 +162,6 @@ const POSScreen = () => {
         setCustomerPhone(text);
         setShowCustomerDropdown(text.length > 0);
         
-        // If user manually types and it no longer matches the selected customer, clear selected customer
         if (selectedCustomerId) {
             const c = customers.find(x => x.id === selectedCustomerId);
             if (c && c.phone !== text) {
@@ -193,47 +184,60 @@ const POSScreen = () => {
             mfsDetails?: MFSPaymentDetails;
         }
     ) => {
-        reduceStock(cart);
-        
         let customerId = selectedCustomerId;
-        
-        // Ensure customer is saved to store if it's new
-        if (!customerId) {
+        let customerToUpdate: Customer | undefined = customers.find(c => c.id === customerId);
+
+        if (!customerToUpdate) {
             const existingCustomer = customers.find(c => c.phone === customerPhone);
-            if (!existingCustomer) {
-                const newCus = addCustomer({
-                    name: customerName,
-                    phone: customerPhone
-                });
-                customerId = newCus.id || null;
+            if (existingCustomer) {
+                customerToUpdate = existingCustomer;
+                customerId = existingCustomer.id;
             } else {
-                customerId = existingCustomer.id || null;
+                const newCustomer: Customer = {
+                    id: Date.now().toString(),
+                    name: customerName,
+                    phone: customerPhone,
+                    loyaltyPoints: 0,
+                    totalSpent: 0,
+                    visitCount: 0,
+                };
+                addCustomer(newCustomer);
+                customerToUpdate = newCustomer;
+                customerId = newCustomer.id;
             }
         }
 
-        const customer: CustomerDetails = customers.find(c => c.id === customerId) || {
-            name: customerName,
-            phone: customerPhone
-        };
-
-        // Calculate Points Earned & Deduct Used Points (Must be done before generating reason)
-        let pointsEarned = 0;
-        let actualPointsUsed = 0;
-        
-        if (loyaltySettings?.isEnabled && customerId) {
-            pointsEarned = Math.floor(finalTotal * loyaltySettings.pointsPerTaka);
-            addPointsToCustomer(customerId, pointsEarned, finalTotal);
+        if (!customerToUpdate) {
+            Alert.alert("Error", "Could not find or create customer.");
+            return;
         }
 
-        if (usePoints && loyaltySettings?.isEnabled && customerId) {
+        let pointsEarned = 0;
+        let actualPointsUsed = 0;
+        let finalPoints = customerToUpdate.loyaltyPoints || 0;
+
+        if (loyaltySettings?.isEnabled) {
+            pointsEarned = Math.floor(finalTotal * loyaltySettings.pointsPerTaka);
+            finalPoints += pointsEarned;
+        }
+
+        if (usePoints && loyaltySettings?.isEnabled) {
             const pts = parseInt(pointsToUseStr) || 0;
             if (pts > 0) {
                 actualPointsUsed = pts;
-                deductPointsFromCustomer(customerId, pts);
+                finalPoints -= actualPointsUsed;
             }
         }
+        
+        const updatedCustomer: Customer = {
+            ...customerToUpdate,
+            loyaltyPoints: finalPoints,
+            totalSpent: (customerToUpdate.totalSpent || 0) + finalTotal,
+            visitCount: (customerToUpdate.visitCount || 0) + 1,
+        };
+        updateCustomer(updatedCustomer);
 
-        const discount: DiscountDetails | undefined = (discountAmount > 0 || loyaltyDiscountAmount > 0) ? {
+        const discountDetails: DiscountDetails | undefined = (discountAmount > 0 || loyaltyDiscountAmount > 0) ? {
             type: discountType,
             value: discountAmount > 0 ? val : 0,
             amountCalculated: totalDiscount,
@@ -254,11 +258,9 @@ const POSScreen = () => {
             id: Date.now().toString(),
             items: cart,
             subTotal: subTotal,
-            discount: discount,
-            tax: taxDetails,
             totalAmount: finalTotal,
             date: new Date().toISOString(),
-            customer: customer,
+            customer: { id: customerId, name: customerName, phone: customerPhone },
             pointsEarned: pointsEarned,
             pointsUsed: actualPointsUsed,
             paymentMethod: method,
@@ -268,10 +270,16 @@ const POSScreen = () => {
             status: 'COMPLETED'
         };
 
+        if (discountDetails) {
+            newOrder.discount = discountDetails;
+        }
+        if (taxDetails) {
+            newOrder.tax = taxDetails;
+        }
+
         addOrder(newOrder);
         setLastOrder(newOrder);
 
-        // Reset cart states
         setIsPaymentModalVisible(false);
         setIsCartVisible(false);
         clearCart();
@@ -328,7 +336,7 @@ const POSScreen = () => {
                     contentContainerStyle={{paddingHorizontal: 15}}
                     renderItem={({item}) => (
                         <Pressable
-                            onPress={() => filterByCategory(item)}
+                            onPress={() => setActiveCategory(item)}
                             className={`mr-2 px-4 py-2 rounded-full border ${activeCategory === item ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'}`}
                         >
                             <Text

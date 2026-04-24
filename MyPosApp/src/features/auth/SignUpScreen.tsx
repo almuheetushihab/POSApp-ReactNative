@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from '../../store/useAuthStore';
+import { UserRole } from '../../types/user';
 
 export const SignUpScreen = () => {
     const router = useRouter();
@@ -15,6 +16,7 @@ export const SignUpScreen = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState<UserRole>('Cashier'); // Default role selection
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -25,12 +27,16 @@ export const SignUpScreen = () => {
         }
         
         setIsLoading(true);
-        const result = await signUp(name, email, password);
+        // Pass the selected role to the signUp function
+        const result = await signUp(name, email, password, role);
         setIsLoading(false);
 
         if (result.success) {
             router.back();
-            Alert.alert('Success', 'Account created successfully! You are now logged in.');
+            Alert.alert(
+                'Request Sent', 
+                'Your account request has been sent. You will be able to log in once an admin approves it.'
+            );
         } else {
             Alert.alert('Sign Up Failed', result.message || 'Could not create account. Please try again.');
         }
@@ -49,7 +55,7 @@ export const SignUpScreen = () => {
                             Create Account
                         </Text>
                         <Text className="text-slate-500 dark:text-slate-400 mt-2 text-center">
-                            Join the MyPOS family today!
+                            Request access by filling out the form
                         </Text>
                     </View>
 
@@ -79,7 +85,7 @@ export const SignUpScreen = () => {
                             />
                         </View>
 
-                        <View className="mb-6">
+                        <View className="mb-4">
                             <Text className="text-slate-600 dark:text-slate-400 mb-1 font-bold">Password</Text>
                             <View className="flex-row items-center bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700">
                                 <TextInput
@@ -96,6 +102,23 @@ export const SignUpScreen = () => {
                             </View>
                         </View>
 
+                        {/* Role Selection */}
+                        <View className="mb-6">
+                            <Text className="text-slate-600 dark:text-slate-400 mb-2 font-bold">Select Role</Text>
+                            <View className="flex-row justify-around">
+                                <RoleSelectorButton
+                                    label="Cashier"
+                                    selectedRole={role}
+                                    onPress={() => setRole('Cashier')}
+                                />
+                                <RoleSelectorButton
+                                    label="Manager"
+                                    selectedRole={role}
+                                    onPress={() => setRole('Manager')}
+                                />
+                            </View>
+                        </View>
+
                         <TouchableOpacity
                             onPress={handleSignUp}
                             disabled={isLoading}
@@ -106,7 +129,7 @@ export const SignUpScreen = () => {
                                 <ActivityIndicator color="white" />
                             ) : (
                                 <Text className="text-white font-bold text-lg">
-                                    Create My Account
+                                    Send Request
                                 </Text>
                             )}
                         </TouchableOpacity>
@@ -114,5 +137,23 @@ export const SignUpScreen = () => {
                 </ScrollView>
             </SafeAreaView>
         </TouchableWithoutFeedback>
+    );
+};
+
+const RoleSelectorButton = ({ label, selectedRole, onPress }: { label: UserRole, selectedRole: UserRole, onPress: () => void }) => {
+    const isSelected = label === selectedRole;
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            className={`w-[48%] py-3 rounded-xl border-2 ${
+                isSelected
+                    ? 'bg-blue-100 dark:bg-blue-900/40 border-blue-500'
+                    : 'bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-700'
+            }`}
+        >
+            <Text className={`font-bold text-center ${
+                isSelected ? 'text-blue-600 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'
+            }`}>{label}</Text>
+        </TouchableOpacity>
     );
 };

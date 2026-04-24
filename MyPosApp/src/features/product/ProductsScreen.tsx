@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -10,48 +10,36 @@ import {
     ScrollView,
     Image
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {Ionicons} from '@expo/vector-icons';
-import {useTranslation} from 'react-i18next';
-import {useRouter} from "expo-router";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import { useRouter } from "expo-router";
 
-import {ProductCard} from "../../components/ProductCard";
-import {useProductStore} from "../../store/useProductStore";
-import {useCartStore} from "../../store/useCartStore";
-import {Product} from "../../types/product";
-import {AddProductModal} from "../../components/AddProductModal";
+import { ProductCard } from "../../components/ProductCard";
+import { useProductStore } from "../../store/useProductStore";
+import { useCartStore } from "../../store/useCartStore";
+import { Product } from "../../types/product";
+import { AddProductModal } from "../../components/AddProductModal";
 import { useSettingsStore } from '../../store/useSettingsStore';
 
 const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
 
 export default function ProductsScreen() {
     const router = useRouter();
-    const {t} = useTranslation();
+    const { t } = useTranslation();
     const [isCartVisible, setIsCartVisible] = useState(false);
     const { activeStoreId } = useSettingsStore();
 
-    const {
-        isLoading,
-        fetchProducts,
-        searchProducts,
-        filterByCategory,
-        activeCategory,
-        products
-    } = useProductStore();
+    // Get products from the store
+    const { products, isLoaded } = useProductStore();
 
-    // Filter products based on the active store
-    const storeFilteredProducts = products.filter(p => p.storeId === activeStoreId);
-    
-    // Apply search and category filters on top of store-filtered products
+    // Local state for filtering
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('All');
+
+    // Filter products based on the active store, search query, and category
     const getFinalFilteredProducts = () => {
-        let finalProducts = storeFilteredProducts;
-        
-        // This assumes searchProducts and filterByCategory from the store now just return a string/category
-        // and the actual filtering logic is reapplied here.
-        // A better approach would be to pass the storeId to the store's filter functions.
-        // For now, we will re-filter for simplicity.
-        
-        const { searchQuery, activeCategory } = useProductStore.getState();
+        let finalProducts = products.filter(p => p.storeId === activeStoreId);
 
         if (searchQuery) {
             finalProducts = finalProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -75,10 +63,8 @@ export default function ProductsScreen() {
         clearCart
     } = useCartStore();
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+    
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
         return item ? item.quantity : 0;
@@ -117,7 +103,7 @@ export default function ProductsScreen() {
                         className="flex-1 ml-3 text-slate-800 dark:text-white font-medium"
                         placeholder={t('search_placeholder')}
                         placeholderTextColor="#94a3b8"
-                        onChangeText={searchProducts}
+                        onChangeText={setSearchQuery}
                     />
                 </View>
             </View>
@@ -132,7 +118,7 @@ export default function ProductsScreen() {
                     contentContainerStyle={{paddingHorizontal: 20}}
                     renderItem={({item}) => (
                         <TouchableOpacity
-                            onPress={() => filterByCategory(item)}
+                            onPress={() => setActiveCategory(item)}
                             className={`mr-3 px-5 py-2 rounded-full border ${
                                 activeCategory === item
                                     ? 'bg-blue-600 border-blue-600'
@@ -150,7 +136,7 @@ export default function ProductsScreen() {
             </View>
 
             {/* Product List */}
-            {isLoading ? (
+            {!isLoaded ? (
                 <View className="flex-1 justify-center items-center">
                     <ActivityIndicator size="large" color="#2563eb"/>
                     <Text className="text-slate-400 mt-2">Loading Items...</Text>

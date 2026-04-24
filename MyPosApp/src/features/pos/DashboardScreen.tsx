@@ -1,11 +1,12 @@
 import React, {useCallback, useState} from 'react';
 import {View, Text, ScrollView, TouchableOpacity, RefreshControl, Alert} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {useFocusEffect, useRouter} from "expo-router";
 import {useTranslation} from "react-i18next";
 import {Ionicons} from "@expo/vector-icons";
 import {useOrderStore} from "../../store/useOrderStore";
 import {useProductStore} from "../../store/useProductStore";
+import {useCustomerStore} from "../../store/useCustomerStore";
 import {SalesChart} from "../../components/SalesChart";
 import {useAuthStore} from "../../store/useAuthStore";
 import {useSettingsStore, Store} from "../../store/useSettingsStore";
@@ -14,8 +15,9 @@ export const DashboardScreen = () => {
     const router = useRouter();
     const {t} = useTranslation();
 
-    const {orders, getTodaySales} = useOrderStore();
-    const {products, fetchProducts} = useProductStore();
+    const {orders, getTodaySales, fetchInitialOrders} = useOrderStore();
+    const {products, fetchInitialProducts} = useProductStore();
+    const { fetchInitialCustomers } = useCustomerStore();
     const { user, hasPermission, logout } = useAuthStore();
     const { stores, activeStoreId, setActiveStore } = useSettingsStore();
 
@@ -36,8 +38,11 @@ export const DashboardScreen = () => {
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        // In a real app, fetchProducts would be filtered by storeId on the backend
-        await fetchProducts();
+        await Promise.all([
+            fetchInitialOrders(true), // Pass true to force re-fetch
+            fetchInitialProducts(true),
+            fetchInitialCustomers(true)
+        ]);
         setRefreshing(false);
     }, []);
 
@@ -50,7 +55,7 @@ export const DashboardScreen = () => {
     const handleLogout = () => {
         Alert.alert(
             "Logout",
-            "Are you sure you want to log out?",
+            "Are you sure you want to log out from your account?",
             [
                 { text: "Cancel", style: "cancel" },
                 { 
@@ -74,6 +79,8 @@ export const DashboardScreen = () => {
     const canViewAnalytics = hasPermission(['Admin', 'Manager']);
     const canViewProducts = hasPermission(['Admin', 'Manager']);
     const canViewSettings = hasPermission(['Admin']);
+    const canManageUsers = hasPermission(['Admin']);
+    const canApproveUsers = hasPermission(['Admin']); // Permission for approving users
     const canSwitchStores = hasPermission(['Admin']); // Only Admins can switch between stores
 
     return (
@@ -222,29 +229,31 @@ export const DashboardScreen = () => {
                     />
 
                     {/* Restricted Actions */}
-                    {canViewProducts ? (
+                    {canViewProducts && (
                         <QuickActionButton
                             icon="cube" label="products"
                             color="#f59e0b" onPress={() => router.push('/(tabs)/products')}
                         />
-                    ) : (
-                        <QuickActionButton
-                            icon="cube" label="Products"
-                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "You don't have permission to manage products.")}
-                            disabled
+                    )}
+
+                    {canManageUsers && (
+                         <QuickActionButton
+                            icon="people" label="User Management"
+                            color="#8b5cf6" onPress={() => router.push('/user-management')}
+                        />
+                    )}
+                    
+                    {canApproveUsers && (
+                         <QuickActionButton
+                            icon="person-add" label="Account Requests"
+                            color="#ec4899" onPress={() => router.push('/account-requests')}
                         />
                     )}
 
-                    {canViewSettings ? (
+                    {canViewSettings && (
                         <QuickActionButton
                             icon="settings" label="settings"
                             color="#64748b" onPress={() => router.push('/(tabs)/settings')}
-                        />
-                    ) : (
-                        <QuickActionButton
-                            icon="settings" label="Settings"
-                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "Only Admins can access settings.")}
-                            disabled
                         />
                     )}
                 </View>
