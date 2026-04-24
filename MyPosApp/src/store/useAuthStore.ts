@@ -2,18 +2,20 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserRole, AuthState } from '../types/user';
-import { auth } from '../services/firebaseConfig'; // Import Firebase auth instance
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-
-// Mock Users Database (can be removed if using Firebase for all user management)
-const MOCK_USERS: User[] = [
-    { id: '1', name: 'Super Admin', email: 'admin@mypos.com', password: 'password', role: 'Admin' },
-    { id: '2', name: 'Store Manager', email: 'manager@mypos.com', password: 'password', role: 'Manager' },
-    { id: '3', name: 'John Cashier', email: 'cashier@mypos.com', password: 'password', role: 'Cashier' },
-];
+import { auth } from '../services/firebaseConfig';
+import { 
+    onAuthStateChanged, 
+    User as FirebaseUser,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile
+} from 'firebase/auth';
 
 interface AuthStoreState extends AuthState {
+    signUp: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    resetPassword: (email: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
     setFirebaseUser: (firebaseUser: FirebaseUser | null) => void;
@@ -26,28 +28,42 @@ export const useAuthStore = create<AuthStoreState>()(
             user: null,
             token: null,
 
-            login: async (email, password) => {
-                await new Promise((resolve) => setTimeout(resolve, 800));
-                const user = MOCK_USERS.find(u => u.email === email && u.password === password);
-                
-                if (user) {
-                    const mockToken = `jwt-token-${user.id}-${Date.now()}`;
-                    set({ isAuthenticated: true, user, token: mockToken });
+            signUp: async (name, email, password) => {
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(userCredential.user, { displayName: name });
+                    // The onAuthStateChanged listener will handle setting the user state
                     return { success: true };
-                } else {
-                    return { success: false, message: 'Invalid credentials' };
+                } catch (error: any) {
+                    return { success: false, message: error.message };
+                }
+            },
+
+            login: async (email, password) => {
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    return { success: true };
+                } catch (error: any) {
+                    return { success: false, message: error.message };
+                }
+            },
+
+            resetPassword: async (email: string) => {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    return { success: true };
+                } catch (error: any) {
+                    return { success: false, message: error.message };
                 }
             },
 
             setFirebaseUser: (firebaseUser) => {
                 if (firebaseUser) {
-                    // In a real app, you might fetch additional user details (like role) from your own backend
-                    // using the firebaseUser.uid
                     const appUser: User = {
                         id: firebaseUser.uid,
-                        name: firebaseUser.displayName || 'Google User',
+                        name: firebaseUser.displayName || 'New User',
                         email: firebaseUser.email || '',
-                        role: 'Manager', // Default role for Google sign-in for now
+                        role: 'Cashier', // Default role for new sign-ups
                         avatarUrl: firebaseUser.photoURL || undefined,
                     };
                     set({ isAuthenticated: true, user: appUser, token: firebaseUser.refreshToken });

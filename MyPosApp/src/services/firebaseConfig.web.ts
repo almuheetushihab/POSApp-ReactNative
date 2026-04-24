@@ -1,0 +1,18 @@
+import { initializeApp } from "firebase/app";
+import { initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB6dFcZXZjfe7ifEYFElPbOOMS2ysCW4rE",
+  authDomain: "myposapp-f9f20.firebaseapp.com",
+  projectId: "myposapp-f9f20",
+  storageBucket: "myposapp-f9f20.appspot.com",
+  messagingSenderId: "23307916827",
+  appId: "1:23307916827:web:9e43f5e047218c3c48cabe",
+  measurementId: "G-RV930H69FY"
+};
+
+const app = initializeApp(firebaseConfig);
+
+export const auth = initializeAuth(app, {
+    persistence: [browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence]
+});

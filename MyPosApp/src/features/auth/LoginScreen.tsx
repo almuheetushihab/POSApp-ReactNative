@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, Alert, TextInput, TouchableOpacity,
-    TouchableWithoutFeedback, Keyboard, ActivityIndicator, Platform
+    TouchableWithoutFeedback, Keyboard, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
@@ -15,19 +15,14 @@ const ANDROID_CLIENT_ID = '1095744732273-321qprauptqmokmf6ha58d710qspv2d3.apps.g
 
 export const LoginScreen = () => {
     const router = useRouter();
-    const { login, user, isAuthenticated } = useAuthStore();
+    const { login } = useAuthStore();
     
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const { promptAsync, isSigningIn } = useGoogleSignIn(WEB_CLIENT_ID, IOS_CLIENT_ID, ANDROID_CLIENT_ID);
-
-    useEffect(() => {
-        if (isAuthenticated && user) {
-            router.replace('/(tabs)/home');
-        }
-    }, [isAuthenticated, user, router]);
 
     const handleLogin = async () => {
         if (!email.trim() || !password.trim()) {
@@ -42,6 +37,7 @@ export const LoginScreen = () => {
         if (!result.success) {
             Alert.alert('Login Failed', result.message || 'Invalid credentials. Please try again.');
         }
+        // The redirect is now handled by the root index.tsx file
     };
 
     return (
@@ -77,14 +73,19 @@ export const LoginScreen = () => {
 
                     <View className="mb-6">
                         <Text className="text-slate-600 dark:text-slate-400 mb-1 font-bold">Password</Text>
-                        <TextInput
-                            className="bg-gray-50 dark:bg-slate-900 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
-                            value={password}
-                            onChangeText={setPassword}
-                            placeholder="••••••••"
-                            placeholderTextColor="#94a3b8"
-                            secureTextEntry
-                        />
+                        <View className="flex-row items-center bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700">
+                            <TextInput
+                                className="flex-1 p-4 text-slate-800 dark:text-white font-medium"
+                                value={password}
+                                onChangeText={setPassword}
+                                placeholder="••••••••"
+                                placeholderTextColor="#94a3b8"
+                                secureTextEntry={!isPasswordVisible}
+                            />
+                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} className="p-3">
+                                <Ionicons name={isPasswordVisible ? "eye-off" : "eye"} size={20} color="#94a3b8" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
 
                     <TouchableOpacity
@@ -103,10 +104,10 @@ export const LoginScreen = () => {
                     </TouchableOpacity>
                     
                     <View className="flex-row justify-between mt-4">
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/forgotpassword')}>
                             <Text className="text-blue-600 text-xs font-bold">Forgot Password?</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={() => router.push('/signup')}>
                             <Text className="text-slate-500 text-xs font-bold">Create Account</Text>
                         </TouchableOpacity>
                     </View>
@@ -136,9 +137,12 @@ export const LoginScreen = () => {
                     )}
                 </TouchableOpacity>
 
-                <Text className="text-center text-slate-400 mt-auto text-xs">
-                    Professional POS System v1.0
-                </Text>
+                {/* Demo Hints */}
+                <View className="mt-8 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                    <Text className="text-blue-800 dark:text-blue-300 font-bold mb-2">For Demo (Password: "password"):</Text>
+                    <Text className="text-blue-600 dark:text-blue-400 text-xs mb-1">• Use a real email to sign up or use:</Text>
+                    <Text className="text-blue-600 dark:text-blue-400 text-xs font-bold mb-1">  admin@mypos.com</Text>
+                </View>
 
             </SafeAreaView>
         </TouchableWithoutFeedback>

@@ -1,21 +1,38 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeAuth, getAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyB6dFcZXZjfe7ifEYFElPbOOMS2ysCW4rE",
+  authDomain: "myposapp-f9f20.firebaseapp.com",
+  projectId: "myposapp-f9f20",
+  storageBucket: "myposapp-f9f20.appspot.com",
+  messagingSenderId: "23307916827",
+  appId: "1:23307916827:web:9e43f5e047218c3c48cabe",
+  measurementId: "G-RV930H69FY"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+let auth;
+
+try {
+  if (Platform.OS !== 'web') {
+    const { getReactNativePersistence } = require('firebase/auth/react-native');
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
+  } else {
+    auth = getAuth(app);
+  }
+} catch (e) {
+  console.error("Failed to initialize auth with persistence:", e);
+  // Fallback for environments where react-native module is not available
+  auth = getAuth(app);
+}
+
+
+export { auth };
