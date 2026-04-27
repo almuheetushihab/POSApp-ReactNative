@@ -61,6 +61,8 @@ export interface CustomerDetails {
     phone: string;
     email?: string;
     address?: string;
+    addresse?: string;
+
 }
 
 export interface Order {
