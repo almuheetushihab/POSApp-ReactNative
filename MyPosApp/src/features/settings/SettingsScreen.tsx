@@ -138,6 +138,18 @@ export default function SettingsScreen() {
                     </TouchableOpacity>
                 </View>
 
+                {/* Inventory Management Section */}
+                <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
+                    Inventory Management
+                </Text>
+                <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                    <SettingsLink 
+                        icon="people-outline" 
+                        label="Manage Suppliers" 
+                        onPress={() => router.push('/suppliers')} 
+                    />
+                    {/* Future inventory links can be added here */}
+                </View>
 
                 {/* TAX & VAT CONFIGURATION SECTION */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
@@ -295,10 +307,13 @@ export default function SettingsScreen() {
     );
 }
 
-const SettingsLink = ({label, icon, last}: any) => {
+const SettingsLink = ({label, icon, last, onPress}: any) => {
     const {t} = useTranslation();
     return (
-        <TouchableOpacity className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''}`}>
+        <TouchableOpacity 
+            onPress={onPress}
+            className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''}`}
+        >
             <View className="flex-row items-center gap-3">
                 <Ionicons name={icon} size={20} color="#64748b" />
                 <Text className="text-slate-700 dark:text-slate-200 font-bold">{t(label) || label}</Text>
