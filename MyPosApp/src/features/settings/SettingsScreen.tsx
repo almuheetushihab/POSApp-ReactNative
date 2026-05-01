@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, ScrollView, Switch, TextInput, Alert} from 'react-native';
+import {View, Text, ScrollView, Switch, TextInput, Alert, Pressable} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
@@ -68,9 +68,9 @@ export default function SettingsScreen() {
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
             {/* Header */}
             <View className="flex-row items-center p-5 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <TouchableOpacity onPress={() => router.back()} className="mr-4 p-2 bg-gray-100 dark:bg-slate-800 rounded-full">
+                <Pressable onPress={() => router.back()} className="mr-4 p-2 bg-gray-100 dark:bg-slate-800 rounded-full">
                     <Ionicons name="arrow-back" size={24} color="#64748b" />
-                </TouchableOpacity>
+                </Pressable>
                 <Text className="text-2xl font-bold text-slate-800 dark:text-white">
                     {t('settings') || 'Settings'}
                 </Text>
@@ -129,13 +129,13 @@ export default function SettingsScreen() {
                         />
                     </View>
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleSaveShopInfo}
                         className="bg-blue-600 p-4 rounded-xl items-center active:bg-blue-700 flex-row justify-center gap-2"
                     >
                         <Ionicons name="save-outline" size={20} color="white" />
                         <Text className="text-white font-bold text-base">Save Shop Info</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {/* Inventory Management Section */}
@@ -215,18 +215,18 @@ export default function SettingsScreen() {
                             <View className="mb-6">
                                 <Text className="text-slate-600 dark:text-slate-400 mb-2 text-xs font-bold uppercase">Tax Calculation Method</Text>
                                 <View className="flex-row bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
-                                    <TouchableOpacity 
+                                    <Pressable
                                         onPress={() => setTaxData({...taxData, isInclusive: true})}
                                         className={`flex-1 py-3 items-center rounded-lg ${taxData.isInclusive ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
                                         <Text className={`font-bold ${taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>Inclusive</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
+                                    </Pressable>
+                                    <Pressable
                                         onPress={() => setTaxData({...taxData, isInclusive: false})}
                                         className={`flex-1 py-3 items-center rounded-lg ${!taxData.isInclusive ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
                                         <Text className={`font-bold ${!taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>Exclusive</Text>
-                                    </TouchableOpacity>
+                                    </Pressable>
                                 </View>
                                 <Text className="text-slate-500 dark:text-slate-400 text-[10px] mt-2 text-center">
                                     {taxData.isInclusive 
@@ -237,13 +237,13 @@ export default function SettingsScreen() {
                         </>
                     )}
 
-                    <TouchableOpacity
+                    <Pressable
                         onPress={handleSaveTaxSettings}
                         className="bg-indigo-600 p-4 rounded-xl items-center active:bg-indigo-700 flex-row justify-center gap-2"
                     >
                         <Ionicons name="calculator-outline" size={20} color="white" />
                         <Text className="text-white font-bold text-base">Save Tax Settings</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {/* Preferences Section */}
@@ -301,13 +301,13 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Logout */}
-                <TouchableOpacity
+                <Pressable
                     onPress={handleLogout}
                     className="bg-red-50 dark:bg-red-900/10 p-4 rounded-2xl flex-row justify-center items-center gap-2 mt-2 mb-10 border border-red-100 dark:border-red-900/20"
                 >
                     <Ionicons name="log-out-outline" size={20} color="#ef4444"/>
                     <Text className="text-red-500 font-bold text-lg">{t('logout') || 'Logout Securely'}</Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 <Text className="text-center text-slate-400 mb-10 text-xs font-bold tracking-widest uppercase">
                     MyPOS Version 1.0.0
@@ -320,7 +320,7 @@ export default function SettingsScreen() {
 const SettingsLink = ({label, icon, last, onPress}: any) => {
     const {t} = useTranslation();
     return (
-        <TouchableOpacity 
+        <Pressable
             onPress={onPress}
             className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''}`}
         >
@@ -329,6 +329,6 @@ const SettingsLink = ({label, icon, last, onPress}: any) => {
                 <Text className="text-slate-700 dark:text-slate-200 font-bold">{t(label) || label}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#cbd5e1"/>
-        </TouchableOpacity>
+        </Pressable>
     );
 };
