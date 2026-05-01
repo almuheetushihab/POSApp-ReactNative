@@ -148,7 +148,17 @@ export default function SettingsScreen() {
                         label="Manage Suppliers" 
                         onPress={() => router.push('/suppliers')} 
                     />
-                    {/* Future inventory links can be added here */}
+                    <SettingsLink 
+                        icon="receipt-outline" 
+                        label="Purchase Orders" 
+                        onPress={() => router.push('/inventory/po-list')}
+                    />
+                    <SettingsLink 
+                        icon="add-circle-outline" 
+                        label="Create Purchase Order" 
+                        onPress={() => router.push('/inventory/create-po')}
+                        last
+                    />
                 </View>
 
                 {/* TAX & VAT CONFIGURATION SECTION */}
