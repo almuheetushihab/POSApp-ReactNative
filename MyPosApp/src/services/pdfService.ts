@@ -1,6 +1,5 @@
 import {Order, PaymentMethod} from "../types/order";
 import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import {useSettingsStore} from "../store/useSettingsStore";
 
 export const pdfService = {
@@ -169,12 +168,15 @@ export const pdfService = {
         try {
             const html = pdfService.generateHtml(order);
 
-            const {uri} = await Print.printToFileAsync({html});
-            console.log('File has been saved to:', uri);
+            // Directly opens the print dialog for the generated HTML.
+            await Print.printAsync({
+                html,
+                // Optional: You can specify printer URL, orientation, etc.
+                // printerUrl: 'your-printer-url', // For network printers
+            });
 
-            await Sharing.shareAsync(uri, {UTI: '.pdf', mimeType: 'application/pdf'});
         } catch (error) {
-            console.error('Error generating PDF:', error);
+            console.error('Error printing receipt:', error);
         }
     }
 };
