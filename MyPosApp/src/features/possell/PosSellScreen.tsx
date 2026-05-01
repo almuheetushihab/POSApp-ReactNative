@@ -1,9 +1,8 @@
 import {useTranslation} from "react-i18next";
 import {useOrderStore} from "../../store/useOrderStore";
-import {useCallback, useState} from "react";
-// import {useFocusEffect} from "expo-router";
+import {useCallback, useState, useEffect, useRef} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput} from "react-native";
+import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput, Animated} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
 import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
@@ -14,6 +13,32 @@ import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
+
+// Simple Toast Component
+const Toast = ({ message, type, onHide }: { message: string, type: 'success' | 'error', onHide: () => void }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.sequence([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+            Animated.delay(2000),
+            Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+        ]).start(() => onHide());
+    }, [message]);
+
+    const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+    const icon = type === 'success' ? 'checkmark-circle-outline' : 'close-circle-outline';
+
+    return (
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }}
+            className={`absolute top-5 self-center ${bgColor} p-3 rounded-full shadow-lg flex-row items-center z-50`}
+        >
+            <Ionicons name={icon} size={20} color="white" />
+            <Text className="text-white font-bold ml-2">{message}</Text>
+        </Animated.View>
+    );
+};
+
 
 export default function POSScreen() {
     const {t} = useTranslation();
@@ -43,6 +68,9 @@ export default function POSScreen() {
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
 
+    // Toast State
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+
     // Discount States
     const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENTAGE'>('FIXED');
     const [discountValueStr, setDiscountValueStr] = useState('');
@@ -57,20 +85,18 @@ export default function POSScreen() {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
 
-    /* useFocusEffect(
-        useCallback(() => {
-            // Screen refresh logic if needed
-        }, [])
-    ); */
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+    };
 
     const handleScan = (scannedCode: string) => {
         const product = products.find(p => p.barcode === scannedCode);
 
         if (product) {
             addToCart(product);
-            Alert.alert("Success", `${product.name} added to cart!`);
+            showToast(`${product.name} added`, 'success');
         } else {
-            Alert.alert("Not Found", "No product found with this barcode.");
+            showToast("Product not found", 'error');
         }
     };
 
@@ -104,27 +130,18 @@ export default function POSScreen() {
     let taxAmount = 0;
     if (taxSettings.isEnabled) {
         if (taxSettings.isInclusive) {
-            // Formula for inclusive tax: Amount * (Rate / (100 + Rate))
-            // This means the totalAfterDiscount ALREADY includes the tax. 
-            // We just need to calculate how much of it was tax for reporting.
             taxAmount = totalAfterDiscount * (taxSettings.taxRate / (100 + taxSettings.taxRate));
         } else {
-            // Formula for exclusive tax: Amount * (Rate / 100)
-            // This adds tax ON TOP of the totalAfterDiscount.
             taxAmount = totalAfterDiscount * (taxSettings.taxRate / 100);
         }
     }
 
-    // Final total calculation
-    // If tax is inclusive, final total doesn't increase. 
-    // If tax is exclusive, final total increases by tax amount.
     const finalTotal = taxSettings.isEnabled && !taxSettings.isInclusive 
         ? totalAfterDiscount + taxAmount 
         : totalAfterDiscount;
 
     const isCheckoutEnabled = () => {
         if (cart.length === 0) return false;
-        // Make customer required (either select from list or enter new name & phone)
         if (!customerName.trim() || !customerPhone.trim()) return false;
         return true;
     };
@@ -158,7 +175,6 @@ export default function POSScreen() {
     ) => {
         reduceStock(cart);
         
-        // Ensure customer is saved to store if it's new
         const existingCustomer = customers.find(c => c.phone === customerPhone);
         if (!existingCustomer) {
             addCustomer({
@@ -204,7 +220,6 @@ export default function POSScreen() {
         addOrder(newOrder);
         setLastOrder(newOrder);
 
-        // Reset cart states
         setIsPaymentModalVisible(false);
         setIsCartVisible(false);
         clearCart();
@@ -220,6 +235,8 @@ export default function POSScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+            
+            {toast && <Toast message={toast.message} type={toast.type} onHide={() => setToast(null)} />}
 
             {/* Header Section */}
             <View className="bg-white dark:bg-slate-900 pb-4 pt-2 shadow-sm z-10">
@@ -306,7 +323,6 @@ export default function POSScreen() {
                     </View>
 
                     <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        {/* Cart Items List */}
                         {cart.map((rawItem) => {
                             const item = getCartItemDetails(rawItem);
                             return (
@@ -353,7 +369,6 @@ export default function POSScreen() {
                             );
                         })}
 
-                        {/* Customer Selection Section */}
                         <View className="mt-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-50">
                             <View className="flex-row items-center justify-between mb-4 z-50">
                                 <View className="flex-row items-center gap-2">
@@ -363,7 +378,6 @@ export default function POSScreen() {
                                 <Text className="text-rose-500 text-xs font-bold bg-rose-50 px-2 py-1 rounded-md">Required *</Text>
                             </View>
 
-                            {/* Customer Search/Phone Field */}
                             <View className="mb-3 z-50 relative">
                                 <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Search Phone Number</Text>
                                 <View className="flex-row items-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 z-50">
@@ -395,7 +409,6 @@ export default function POSScreen() {
                                     )}
                                 </View>
 
-                                {/* Dropdown List */}
                                 {showCustomerDropdown && filteredCustomers.length > 0 && (
                                     <View className="absolute top-[100%] left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl mt-1 shadow-lg max-h-40 z-50 overflow-hidden">
                                         <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
@@ -428,7 +441,6 @@ export default function POSScreen() {
                             </View>
                         </View>
 
-                        {/* Discount Section */}
                         <View className="mt-4 mb-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-10">
                             <View className="flex-row items-center gap-2 mb-4">
                                 <Ionicons name="pricetag-outline" size={20} color="#f59e0b" />
@@ -463,7 +475,6 @@ export default function POSScreen() {
                         </View>
                     </ScrollView>
 
-                    {/* Bottom Summary & Actions */}
                     <View className="p-6 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-10">
                         <View className="flex-row justify-between mb-2">
                             <Text className="text-slate-500 font-medium">Subtotal</Text>
