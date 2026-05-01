@@ -11,13 +11,19 @@ interface ProductCardProps {
     quantity?: number;
 }
 
+const LOW_STOCK_THRESHOLD = 10; // Define a threshold for low stock
+
 export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: ProductCardProps) => {
     const availableStock = product.stock - quantity;
 
-    const isOutOfStock = availableStock <= 0;
+    const isOutOfStock = product.stock <= 0; // Check original stock
+    const isAddToCartDisabled = availableStock <= 0; // Check if user can add more
+    
+    // New state to identify low stock
+    const isLowStock = !isOutOfStock && product.stock <= LOW_STOCK_THRESHOLD;
 
     const handleAdd = () => {
-        if (availableStock <= 0) {
+        if (isAddToCartDisabled) {
             Alert.alert("Limit Reached", `Only ${product.stock} items available in stock.`);
             return;
         }
@@ -40,11 +46,19 @@ export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: P
                     <Ionicons name="image-outline" size={40} color="#94a3b8"/>
                 )}
 
+                {/* Out of Stock Badge */}
                 {isOutOfStock && (
                     <View className="absolute w-full h-full bg-black/50 items-center justify-center z-10">
                         <Text className="text-white font-bold text-[10px] bg-red-600 px-2 py-1 rounded shadow-sm">
                             OUT OF STOCK
                         </Text>
+                    </View>
+                )}
+
+                {/* Low Stock Badge */}
+                {isLowStock && !isOutOfStock && (
+                    <View className="absolute top-1 right-1 bg-yellow-500 px-2 py-1 rounded-full shadow z-10">
+                        <Text className="text-yellow-900 font-bold text-[9px]">LOW STOCK</Text>
                     </View>
                 )}
             </TouchableOpacity>
@@ -59,8 +73,12 @@ export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: P
                 </TouchableOpacity>
 
                 <Text
-                    className={`text-xs mb-2 ${isOutOfStock ? 'text-red-500 font-bold' : 'text-slate-500 dark:text-slate-400'}`}>
-                    {product.stock === 0
+                    className={`text-xs mb-2 font-medium ${
+                        isOutOfStock ? 'text-red-500 font-bold' : 
+                        isLowStock ? 'text-yellow-600 dark:text-yellow-500' : 
+                        'text-slate-500 dark:text-slate-400'
+                    }`}>
+                    {isOutOfStock
                         ? 'Stock Out'
                         : `Available: ${availableStock} / ${product.stock}`}
                 </Text>
@@ -70,7 +88,7 @@ export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: P
                         ৳{product.price}
                     </Text>
 
-                    {product.stock > 0 && (
+                    {!isOutOfStock && (
                         quantity > 0 ? (
                             <View className="flex-row items-center bg-blue-100 dark:bg-blue-900 rounded-full">
                                 <TouchableOpacity
@@ -86,8 +104,8 @@ export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: P
 
                                 <TouchableOpacity
                                     onPress={handleAdd}
-                                    disabled={isOutOfStock}
-                                    className={`p-1.5 rounded-full ${isOutOfStock ? 'bg-gray-400' : 'bg-blue-600'}`}
+                                    disabled={isAddToCartDisabled}
+                                    className={`p-1.5 rounded-full ${isAddToCartDisabled ? 'bg-gray-400' : 'bg-blue-600'}`}
                                 >
                                     <Ionicons name="add" size={16} color="white"/>
                                 </TouchableOpacity>
@@ -95,10 +113,10 @@ export const ProductCard = ({product, onAdd, onRemove, onPress, quantity = 0}: P
                         ) : (
                             <TouchableOpacity
                                 onPress={handleAdd}
-                                disabled={isOutOfStock}
-                                className={`p-2 rounded-full ${isOutOfStock ? 'bg-gray-200' : 'bg-blue-100 dark:bg-blue-900/40'}`}
+                                disabled={isAddToCartDisabled}
+                                className={`p-2 rounded-full ${isAddToCartDisabled ? 'bg-gray-200' : 'bg-blue-100 dark:bg-blue-900/40'}`}
                             >
-                                <Ionicons name="add" size={20} color={isOutOfStock ? '#9ca3af' : '#2563eb'}/>
+                                <Ionicons name="add" size={20} color={isAddToCartDisabled ? '#9ca3af' : '#2563eb'}/>
                             </TouchableOpacity>
                         )
                     )}
