@@ -31,15 +31,15 @@ const getStatusTextStyle = (status: PurchaseOrderStatus) => {
     }
 };
 
-const PurchaseOrderCard = ({ order, onUpdateStatus }: { order: PurchaseOrder, onUpdateStatus: (id: string, status: PurchaseOrderStatus) => void }) => {
+const PurchaseOrderCard = ({ order, onUpdateStatus, onViewDetails }: { order: PurchaseOrder, onUpdateStatus: (id: string, status: PurchaseOrderStatus) => void, onViewDetails: (id: string) => void }) => {
     const { getSupplierById } = useSupplierStore.getState();
     const supplier = getSupplierById(order.supplierId);
 
     return (
-        <View className="bg-white dark:bg-slate-800 p-4 rounded-xl mb-3 shadow-sm border border-gray-100 dark:border-slate-700">
+        <TouchableOpacity onPress={() => onViewDetails(order.id)} className="bg-white dark:bg-slate-800 p-4 rounded-xl mb-3 shadow-sm border border-gray-100 dark:border-slate-700">
             <View className="flex-row justify-between items-start mb-3">
-                <View>
-                    <Text className="text-sm text-slate-500">PO ID: {order.id}</Text>
+                <View className="flex-1">
+                    <Text className="text-sm text-slate-500" numberOfLines={1}>PO ID: {order.id}</Text>
                     <Text className="text-lg font-bold text-slate-800 dark:text-white">{supplier?.name || 'Unknown Supplier'}</Text>
                 </View>
                 <View className={`px-3 py-1 rounded-full ${getStatusChipStyle(order.status)}`}>
@@ -54,22 +54,22 @@ const PurchaseOrderCard = ({ order, onUpdateStatus }: { order: PurchaseOrder, on
                         <Text className="text-slate-500 dark:text-slate-400">Qty: {item.quantity}</Text>
                     </View>
                 ))}
-                {order.items.length > 2 && <Text className="text-slate-400 text-xs mt-1">...and {order.items.length - 2} more</Text>}
+                {order.items.length > 2 && <Text className="text-blue-500 text-xs mt-1 font-bold">... and {order.items.length - 2} more. Tap to see all.</Text>}
             </View>
             <View className="border-t border-gray-100 dark:border-slate-700 mt-3 pt-3 flex-row justify-between items-center">
                 <Text className="text-lg font-bold text-blue-600 dark:text-blue-400">৳{order.totalAmount.toFixed(2)}</Text>
                 {order.status === 'PENDING' && (
                     <View className="flex-row gap-2">
-                        <TouchableOpacity onPress={() => onUpdateStatus(order.id, 'COMPLETED')} className="bg-green-500 p-2 rounded-lg">
+                        <TouchableOpacity onPress={(e) => { e.stopPropagation(); onUpdateStatus(order.id, 'COMPLETED'); }} className="bg-green-500 p-2 rounded-lg">
                             <Ionicons name="checkmark-done" size={20} color="white" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => onUpdateStatus(order.id, 'CANCELLED')} className="bg-red-500 p-2 rounded-lg">
+                        <TouchableOpacity onPress={(e) => { e.stopPropagation(); onUpdateStatus(order.id, 'CANCELLED'); }} className="bg-red-500 p-2 rounded-lg">
                             <Ionicons name="close" size={20} color="white" />
                         </TouchableOpacity>
                     </View>
                 )}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -97,6 +97,10 @@ export default function PurchaseOrderListScreen() {
         );
     };
 
+    const handleViewDetails = (orderId: string) => {
+        router.push(`/inventory/po-detail/${orderId}`);
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
             <View className="flex-row justify-between items-center p-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800">
@@ -111,7 +115,11 @@ export default function PurchaseOrderListScreen() {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ padding: 16 }}
                 renderItem={({ item }) => (
-                    <PurchaseOrderCard order={item} onUpdateStatus={handleUpdateStatus} />
+                    <PurchaseOrderCard 
+                        order={item} 
+                        onUpdateStatus={handleUpdateStatus}
+                        onViewDetails={handleViewDetails}
+                    />
                 )}
                 ListEmptyComponent={
                     <View className="flex-1 justify-center items-center mt-20">

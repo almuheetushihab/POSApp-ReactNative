@@ -11,10 +11,11 @@ import { Product } from '../../types/product';
 import { PurchaseOrderItem } from '../../types/purchaseOrder';
 
 // Step 1: Select Supplier
+// The component now takes full height and its FlatList can scroll independently.
 const SelectSupplierStep = ({ onSelect }: { onSelect: (supplier: Supplier) => void }) => {
     const { suppliers } = useSupplierStore();
     return (
-        <View>
+        <View className="flex-1">
             <Text className="text-xl font-bold text-slate-800 dark:text-white mb-4">Select a Supplier</Text>
             <FlatList
                 data={suppliers}
@@ -25,20 +26,22 @@ const SelectSupplierStep = ({ onSelect }: { onSelect: (supplier: Supplier) => vo
                         <Text className="text-slate-500">{item.phone}</Text>
                     </TouchableOpacity>
                 )}
+                contentContainerStyle={{ paddingBottom: 20 }}
             />
         </View>
     );
 };
 
 // Step 2: Add Products
-const AddProductsStep = ({ selectedProducts, onAddProduct, onUpdateProduct, onRemoveProduct }: any) => {
+// The component now takes full height. The FlatList is the main scrollable element.
+const AddProductsStep = ({ onAddProduct }: any) => {
     const { products } = useProductStore();
     const [search, setSearch] = useState('');
     
     const filteredProducts = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <View>
+        <View className="flex-1">
             <Text className="text-xl font-bold text-slate-800 dark:text-white mb-4">Add Products to Order</Text>
             <TextInput
                 placeholder="Search for products..."
@@ -56,6 +59,7 @@ const AddProductsStep = ({ selectedProducts, onAddProduct, onUpdateProduct, onRe
                         <Ionicons name="add-circle" size={24} color="#2563eb" />
                     </TouchableOpacity>
                 )}
+                contentContainerStyle={{ paddingBottom: 20 }}
             />
         </View>
     );
@@ -77,7 +81,6 @@ export default function CreatePurchaseOrderScreen() {
     };
 
     const handleAddProduct = (product: Product) => {
-        // Avoid adding duplicates
         if (items.find(item => item.productId === product.id)) {
             Alert.alert("Already Added", `${product.name} is already in the order.`);
             return;
@@ -86,7 +89,7 @@ export default function CreatePurchaseOrderScreen() {
             productId: product.id,
             productName: product.name,
             quantity: 1,
-            purchasePrice: product.purchasePrice || product.price, // Default to sale price if no purchase price
+            purchasePrice: product.purchasePrice || product.price,
         };
         setItems(prev => [...prev, newItem]);
     };
@@ -126,20 +129,18 @@ export default function CreatePurchaseOrderScreen() {
         ]);
     };
 
-    return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
-            <View className="flex-row items-center p-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : router.back()} className="p-2">
-                    <Ionicons name="arrow-back" size={24} color="#64748b" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-slate-800 dark:text-white">Create Purchase Order</Text>
-            </View>
-
-            <ScrollView className="p-4">
-                {step === 1 && <SelectSupplierStep onSelect={handleSelectSupplier} />}
-                
-                {step === 2 && (
-                    <View>
+    // This function renders the content for the current step
+    const renderStepContent = () => {
+        switch (step) {
+            case 1:
+                return (
+                    <View className="flex-1 p-4">
+                        <SelectSupplierStep onSelect={handleSelectSupplier} />
+                    </View>
+                );
+            case 2:
+                return (
+                    <View className="flex-1 p-4">
                         <AddProductsStep onAddProduct={handleAddProduct} />
                         
                         {items.length > 0 && (
@@ -148,10 +149,10 @@ export default function CreatePurchaseOrderScreen() {
                             </TouchableOpacity>
                         )}
                     </View>
-                )}
-
-                {step === 3 && (
-                    <View>
+                );
+            case 3:
+                return (
+                    <ScrollView className="p-4">
                         <Text className="text-xl font-bold text-slate-800 dark:text-white mb-4">Review Order</Text>
                         <View className="bg-white dark:bg-slate-800 p-4 rounded-lg mb-4">
                             <Text className="font-bold text-slate-800 dark:text-white">{selectedSupplier?.name}</Text>
@@ -188,9 +189,23 @@ export default function CreatePurchaseOrderScreen() {
                         <TouchableOpacity onPress={handleSubmitOrder} className="bg-green-600 p-4 rounded-lg mt-4 items-center">
                             <Text className="text-white font-bold">Submit Purchase Order</Text>
                         </TouchableOpacity>
-                    </View>
-                )}
-            </ScrollView>
+                    </ScrollView>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+            <View className="flex-row items-center p-4 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <TouchableOpacity onPress={() => step > 1 ? setStep(step - 1) : router.back()} className="p-2">
+                    <Ionicons name="arrow-back" size={24} color="#64748b" />
+                </TouchableOpacity>
+                <Text className="text-xl font-bold text-slate-800 dark:text-white">Create Purchase Order</Text>
+            </View>
+
+            {renderStepContent()}
         </SafeAreaView>
     );
 }
