@@ -58,6 +58,7 @@ export const DashboardScreen = () => {
     // RBAC logic to hide/show UI parts
     const canViewAnalytics = hasPermission(['Admin', 'Manager']);
     const canViewProducts = hasPermission(['Admin', 'Manager']);
+    const canManageCustomers = hasPermission(['Admin', 'Manager']);
     const canViewSettings = hasPermission(['Admin']);
 
     return (
@@ -181,6 +182,19 @@ export const DashboardScreen = () => {
                         <QuickActionButton
                             icon="cube" label="Products"
                             color="#94a3b8" onPress={() => Alert.alert("Access Denied", "You don't have permission to manage products.")}
+                            disabled
+                        />
+                    )}
+
+                    {canManageCustomers ? (
+                        <QuickActionButton
+                            icon="people" label="Customers"
+                            color="#8b5cf6" onPress={() => router.push('/features/customer')}
+                        />
+                    ) : (
+                         <QuickActionButton
+                            icon="people" label="Customers"
+                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "You don't have permission to manage customers.")}
                             disabled
                         />
                     )}
