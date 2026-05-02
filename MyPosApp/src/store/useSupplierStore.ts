@@ -26,6 +26,7 @@ const initialSuppliers: Supplier[] = [
 interface SupplierState {
     suppliers: Supplier[];
     isLoading: boolean;
+    setSuppliers: (suppliers: Supplier[]) => void; // New action for restoring
     fetchSuppliers: () => Promise<void>;
     addSupplier: (supplier: Omit<Supplier, 'id' | 'createdAt'>) => void;
     updateSupplier: (updatedSupplier: Supplier) => void;
@@ -38,6 +39,8 @@ export const useSupplierStore = create<SupplierState>()(
         (set, get) => ({
             suppliers: [],
             isLoading: false,
+
+            setSuppliers: (suppliers) => set({ suppliers }),
 
             fetchSuppliers: async () => {
                 // In a real app, you would fetch this from a service/API

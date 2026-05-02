@@ -13,6 +13,7 @@ interface ProductState {
     searchQuery: string;
 
     // Actions
+    setProducts: (products: Product[]) => void; // New action for restoring
     fetchProducts: () => Promise<void>;
     filterByCategory: (category: string) => void;
     searchProducts: (query: string) => void;
@@ -30,6 +31,13 @@ export const useProductStore = create<ProductState>()(
             isLoading: false,
             activeCategory: 'All',
             searchQuery: '',
+
+            setProducts: (products) => set({
+                products,
+                filteredProducts: products,
+                activeCategory: 'All',
+                searchQuery: '',
+            }),
 
             fetchProducts: async () => {
                 if (get().products.length > 0) {

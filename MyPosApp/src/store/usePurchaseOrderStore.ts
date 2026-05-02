@@ -6,6 +6,7 @@ import { useProductStore } from './useProductStore';
 
 interface PurchaseOrderState {
     purchaseOrders: PurchaseOrder[];
+    setPurchaseOrders: (orders: PurchaseOrder[]) => void; // New action for restoring
     fetchPurchaseOrders: () => Promise<void>;
     addPurchaseOrder: (orderData: Omit<PurchaseOrder, 'id' | 'totalAmount' | 'orderDate' | 'status'>) => PurchaseOrder;
     updatePurchaseOrderStatus: (orderId: string, status: PurchaseOrderStatus) => void;
@@ -16,6 +17,8 @@ export const usePurchaseOrderStore = create<PurchaseOrderState>()(
     persist(
         (set, get) => ({
             purchaseOrders: [],
+
+            setPurchaseOrders: (orders) => set({ purchaseOrders: orders }),
 
             fetchPurchaseOrders: async () => {
                 // For now, we just ensure the state is loaded from storage.

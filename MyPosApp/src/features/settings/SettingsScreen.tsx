@@ -1,13 +1,14 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, Switch, TextInput, Alert, Pressable} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {View, Text, ScrollView, Switch, TextInput, Alert, Pressable, ActivityIndicator} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; // Corrected import
 import {Ionicons} from '@expo/vector-icons';
 import {useRouter} from 'expo-router';
 import {useTranslation} from 'react-i18next';
 import {useColorScheme} from 'nativewind';
 import {useAppStore} from "../../store/useAppStore";
 import {useSettingsStore, TaxSettings} from "../../store/useSettingsStore";
-import {useAuthStore} from "../../store/useAuthStore";
+import {useAuthStore}from "../../store/useAuthStore";
+import { BackupService } from '../../services/BackupService';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function SettingsScreen() {
 
     const [formData, setFormData] = useState(shopInfo);
     const [taxData, setTaxData] = useState<TaxSettings>(taxSettings);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         setFormData(shopInfo);
@@ -57,6 +59,41 @@ export default function SettingsScreen() {
             taxRate: isNaN(rate) ? 0 : rate
         });
         Alert.alert("Success", "Tax & VAT settings updated successfully!");
+    };
+
+    const handleBackup = async () => {
+        setIsProcessing(true);
+        const result = await BackupService.backupData();
+        setIsProcessing(false);
+        if (!result.success) {
+            Alert.alert("Backup Failed", "An error occurred during backup. Please try again.");
+        }
+    };
+
+    const handleRestore = () => {
+        Alert.alert(
+            "Restore Data",
+            "Are you sure you want to restore data? This will overwrite all current data in the app. This action cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Restore", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        setIsProcessing(true);
+                        const result = await BackupService.restoreData();
+                        setIsProcessing(false);
+                        if (result.success) {
+                            Alert.alert("Restore Successful", "Your data has been restored. The app will now reload.");
+                            // You might want to force a reload of the app or key components here
+                            router.replace('/(tabs)/');
+                        } else {
+                            Alert.alert("Restore Failed", result.message || "An error occurred. Please check the backup file and try again.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleLogout = () => {
@@ -136,6 +173,26 @@ export default function SettingsScreen() {
                         <Ionicons name="save-outline" size={20} color="white" />
                         <Text className="text-white font-bold text-base">Save Shop Info</Text>
                     </Pressable>
+                </View>
+
+                {/* Data Management Section */}
+                <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
+                    Data Management
+                </Text>
+                <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                    <SettingsLink 
+                        icon="cloud-upload-outline" 
+                        label="Backup Data" 
+                        onPress={handleBackup} 
+                        isProcessing={isProcessing}
+                    />
+                    <SettingsLink 
+                        icon="cloud-download-outline" 
+                        label="Restore Data" 
+                        onPress={handleRestore}
+                        isProcessing={isProcessing}
+                        last
+                    />
                 </View>
 
                 {/* Inventory Management Section */}
@@ -317,18 +374,19 @@ export default function SettingsScreen() {
     );
 }
 
-const SettingsLink = ({label, icon, last, onPress}: any) => {
+const SettingsLink = ({label, icon, last, onPress, isProcessing = false}: any) => {
     const {t} = useTranslation();
     return (
         <Pressable
             onPress={onPress}
-            className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''}`}
+            disabled={isProcessing}
+            className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''} ${isProcessing ? 'opacity-50' : ''}`}
         >
             <View className="flex-row items-center gap-3">
                 <Ionicons name={icon} size={20} color="#64748b" />
                 <Text className="text-slate-700 dark:text-slate-200 font-bold">{t(label) || label}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#cbd5e1"/>
+            {isProcessing ? <ActivityIndicator size="small" color="#64748b" /> : <Ionicons name="chevron-forward" size={20} color="#cbd5e1"/>}
         </Pressable>
     );
 };

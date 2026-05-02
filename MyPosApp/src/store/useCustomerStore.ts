@@ -3,6 +3,7 @@ import { CustomerDetails } from '../types/order';
 
 interface CustomerState {
     customers: CustomerDetails[];
+    setCustomers: (customers: CustomerDetails[]) => void; // New action for restoring
     addCustomer: (customer: CustomerDetails) => void;
     updateCustomer: (id: string, updatedCustomer: Partial<CustomerDetails>) => void;
     deleteCustomer: (id: string) => void;
@@ -13,6 +14,8 @@ export const useCustomerStore = create<CustomerState>((set, get) => ({
     customers: [
         { id: '1', name: 'Walk-in Customer', phone: '' },
     ],
+
+    setCustomers: (customers) => set({ customers }),
 
     addCustomer: (customer) => {
         const newCustomer = {

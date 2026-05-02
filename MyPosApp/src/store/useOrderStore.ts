@@ -7,6 +7,7 @@ interface OrderState {
     orders: Order[];
     
     // Actions
+    setOrders: (orders: Order[]) => void; // New action for restoring
     addOrder: (order: Order) => void;
     processRefund: (orderId: string, refundDetails: RefundDetails, isPartial?: boolean) => void;
     processReturn: (orderId: string, returnReason?: string) => void;
@@ -23,6 +24,8 @@ export const useOrderStore = create<OrderState>()(
     persist(
         (set, get) => ({
             orders: [],
+
+            setOrders: (orders) => set({ orders }),
 
             addOrder: (order) => {
                 const newOrder: Order = {
