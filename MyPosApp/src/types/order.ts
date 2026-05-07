@@ -39,6 +39,10 @@ export interface ExchangeDetails {
     reason?: string;
     exchangedItems: { oldProductId: string; newProductId: string; quantity: number }[];
     priceDifference: number; // positive means customer pays more, negative means shop owes customer
+    paymentMethod?: PaymentMethod;
+    splitPaymentDetails?: SplitPaymentDetails;
+    cardDetails?: CardPaymentDetails;
+    mfsDetails?: MFSPaymentDetails;
 }
 
 export interface DiscountDetails {

@@ -13,7 +13,7 @@ interface ProductState {
     searchQuery: string;
 
     // Actions
-    setProducts: (products: Product[]) => void; // New action for restoring
+    setProducts: (products: Product[]) => void;
     fetchProducts: () => Promise<void>;
     filterByCategory: (category: string) => void;
     searchProducts: (query: string) => void;
@@ -21,6 +21,7 @@ interface ProductState {
     updateProduct: (updatedProduct: Product) => void;
     deleteProduct: (productId: string) => void;
     reduceStock: (cartItems: any[]) => void;
+    restoreStock: (items: {id: string, quantity: number}[]) => void; // Added for Return/Refund/Exchange
 }
 
 export const useProductStore = create<ProductState>()(
@@ -149,6 +150,31 @@ export const useProductStore = create<ProductState>()(
                         const cartItem = cartItems.find((item) => item.id === product.id);
                         if (cartItem) {
                             return { ...product, stock: product.stock - cartItem.quantity };
+                        }
+                        return product;
+                    });
+
+                    return {
+                        products: newProducts,
+                        filteredProducts: newFiltered
+                    };
+                });
+            },
+
+            restoreStock: (items) => {
+                set((state) => {
+                    const newProducts = state.products.map((product) => {
+                        const returnedItem = items.find((item) => item.id === product.id);
+                        if (returnedItem) {
+                            return { ...product, stock: product.stock + returnedItem.quantity };
+                        }
+                        return product;
+                    });
+
+                    const newFiltered = state.filteredProducts.map((product) => {
+                        const returnedItem = items.find((item) => item.id === product.id);
+                        if (returnedItem) {
+                            return { ...product, stock: product.stock + returnedItem.quantity };
                         }
                         return product;
                     });
