@@ -1,6 +1,16 @@
 import {Order, PaymentMethod} from "../types/order";
 import * as Print from 'expo-print';
 import {useSettingsStore} from "../store/useSettingsStore";
+import { ProductAttributes } from "../types/product";
+
+const formatAttributes = (attributes?: ProductAttributes) => {
+    if (!attributes || Object.keys(attributes).length === 0) {
+        return '';
+    }
+    return '<br><span class="subtitle">' + Object.entries(attributes)
+        .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+        .join(', ') + '</span>';
+};
 
 export const pdfService = {
 
@@ -9,12 +19,13 @@ export const pdfService = {
 
         const itemsHtml = order.items.map(item => `
           <tr class="item">
-            <td>${item.name}<br><span class="subtitle">Qty: ${item.quantity}</span></td>
+            <td>${item.name}${formatAttributes(item.attributes)}</td>
             <td style="text-align: right;">৳${item.price * item.quantity}</td>
           </tr>
         `).join('');
 
-        // Generate Payment Details HTML
+        // ... (rest of the function remains the same)
+        
         let paymentDetailsHtml = `<p><span>Method:</span> <span>${order.paymentMethod}</span></p>`;
         
         if (order.paymentMethod === 'CARD' && order.cardDetails) {
@@ -41,7 +52,6 @@ export const pdfService = {
              }
         }
 
-        // Generate Customer HTML
         let customerHtml = '';
         if (order.customer) {
             customerHtml = `
@@ -53,7 +63,6 @@ export const pdfService = {
             `;
         }
 
-        // Generate Discount HTML
         let discountHtml = '';
         if (order.discount && order.discount.amountCalculated > 0) {
             const discountLabel = order.discount.type === 'PERCENTAGE' 
@@ -68,7 +77,6 @@ export const pdfService = {
             `;
         }
 
-        // Generate Tax HTML
         let taxHtml = '';
         if (order.tax && order.tax.taxAmount > 0) {
              const taxLabel = `${order.tax.taxName} (${order.tax.taxRate}%) ${order.tax.isInclusive ? '[Incl]' : '[Excl]'}`;
@@ -80,10 +88,8 @@ export const pdfService = {
              `;
         }
 
-        // Determine SubTotal
         const subTotalVal = order.subTotal || (order.totalAmount + (order.discount?.amountCalculated || 0) - (order.tax && !order.tax.isInclusive ? order.tax.taxAmount : 0));
 
-        // Generate Status Watermark and Info Box
         let statusWatermark = '';
         let statusInfoBox = '';
         if (order.status !== 'COMPLETED') {
@@ -113,7 +119,6 @@ export const pdfService = {
 
         return `
           <html>
-          
             <head>
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
               <style>
@@ -224,14 +229,7 @@ export const pdfService = {
     printOrder: async (order: Order) => {
         try {
             const html = pdfService.generateHtml(order);
-
-            // Directly opens the print dialog for the generated HTML.
-            await Print.printAsync({
-                html,
-                // Optional: You can specify printer URL, orientation, etc.
-                // printerUrl: 'your-printer-url', // For network printers
-            });
-
+            await Print.printAsync({ html });
         } catch (error) {
             console.error('Error printing receipt:', error);
         }
