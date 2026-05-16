@@ -87,12 +87,12 @@ export const DashboardScreen = () => {
                                     {user?.name || t('user')}
                                 </Text>
                                 <View className={`ml-2 px-2 py-0.5 rounded-md ${
-                                    user?.role === 'Admin' ? 'bg-rose-100' :
-                                    user?.role === 'Manager' ? 'bg-purple-100' : 'bg-green-100'
+                                    user?.role === 'Admin' ? 'bg-rose-100 dark:bg-rose-900/30' :
+                                    user?.role === 'Manager' ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-green-100 dark:bg-green-900/30'
                                 }`}>
                                     <Text className={`text-[10px] font-bold ${
-                                        user?.role === 'Admin' ? 'text-rose-700' :
-                                        user?.role === 'Manager' ? 'text-purple-700' : 'text-green-700'
+                                        user?.role === 'Admin' ? 'text-rose-700 dark:text-rose-400' :
+                                        user?.role === 'Manager' ? 'text-purple-700 dark:text-purple-400' : 'text-green-700 dark:text-green-400'
                                     }`}>{user?.role || t('guest')}</Text>
                                 </View>
                             </View>
