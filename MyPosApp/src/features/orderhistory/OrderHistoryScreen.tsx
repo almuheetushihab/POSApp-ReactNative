@@ -11,6 +11,7 @@ import { useProductStore } from "../../store/useProductStore";
 import { Product } from '../../types/product';
 import { CartItem } from '../../types/carts';
 import { PaymentProcessingModal } from '../../components/PaymentProcessingModal';
+import { useTranslation } from 'react-i18next';
 
 interface ExchangePair {
     id: string;
@@ -25,6 +26,7 @@ export default function OrderHistoryScreen() {
     const { products, fetchProducts, reduceStock, restoreStock } = useProductStore();
     const colorScheme = useColorScheme();
     const { hasPermission } = useAuthStore();
+    const { t } = useTranslation();
     
     useEffect(() => {
         fetchProducts();
@@ -73,16 +75,16 @@ export default function OrderHistoryScreen() {
 
     const handleClearHistory = () => {
         Alert.alert(
-            "Clear History",
-            "Are you sure you want to delete all sales history? This cannot be undone.",
+            t("clear_history_title"),
+            t("clear_history_desc"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("cancel"), style: "cancel" },
                 {
-                    text: "Clear All",
+                    text: t("clear_all_btn"),
                     style: "destructive",
                     onPress: () => {
                         clearOrders();
-                        Alert.alert("Success", "History cleared successfully.");
+                        Alert.alert(t("success"), t("history_cleared_success"));
                     }
                 }
             ]
@@ -91,15 +93,14 @@ export default function OrderHistoryScreen() {
 
     const handleFullRefund = (order: Order) => {
         Alert.alert(
-            "Process Refund",
-            `Are you sure you want to fully refund ৳${order.totalAmount}?`,
+            t("process_refund_title"),
+            t("process_refund_desc", { amount: order.totalAmount }),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("cancel"), style: "cancel" },
                 {
-                    text: "Refund",
+                    text: t("refund_btn"),
                     style: "destructive",
                     onPress: () => {
-                        // Restore stock for all items in the order
                         const itemsToRestore = order.items.map(item => ({ id: item.id, quantity: item.quantity }));
                         restoreStock(itemsToRestore);
 
@@ -109,7 +110,7 @@ export default function OrderHistoryScreen() {
                             reason: 'Customer requested full refund'
                         });
                         setOptionsModalVisible(false);
-                        Alert.alert("Success", "Order fully refunded and inventory restored.");
+                        Alert.alert(t("success"), t("refund_success"));
                     }
                 }
             ]
@@ -118,29 +119,26 @@ export default function OrderHistoryScreen() {
 
     const submitReturn = () => {
         if (selectedOrder) {
-            // Restore stock for all items in the order
             const itemsToRestore = selectedOrder.items.map(item => ({ id: item.id, quantity: item.quantity }));
             restoreStock(itemsToRestore);
 
             processReturn(selectedOrder.id, returnReason || 'Customer returned items');
             setReturnModalVisible(false);
             setReturnReason('');
-            Alert.alert("Success", "Order marked as returned and inventory restored.");
+            Alert.alert(t("success"), t("return_success"));
         }
     };
 
     const initiateExchange = () => {
         if (!selectedOrder) return;
         if (exchangeList.length === 0) {
-            Alert.alert("Error", "Please add at least one product exchange pair.");
+            Alert.alert(t("error"), t("exchange_error"));
             return;
         }
 
         if (calculatedDiff > 0) {
-            // Customer owes money, show payment modal
             setIsPaymentModalVisible(true);
         } else {
-            // Shop owes customer or even exchange, finalize directly
             finalizeExchange();
         }
     };
@@ -155,11 +153,9 @@ export default function OrderHistoryScreen() {
     ) => {
         if (!selectedOrder) return;
 
-        // 1. Restore stock for returned items
         const itemsToRestore = exchangeList.map(pair => ({ id: pair.returnItem.id, quantity: pair.quantity }));
         restoreStock(itemsToRestore);
 
-        // 2. Reduce stock for newly given items
         const itemsToReduce = exchangeList.map(pair => ({ id: pair.newProduct.id, quantity: pair.quantity }));
         reduceStock(itemsToReduce);
 
@@ -181,7 +177,7 @@ export default function OrderHistoryScreen() {
         setIsPaymentModalVisible(false);
         setExchangeModalVisible(false);
         resetExchangeState();
-        Alert.alert("Success", "Order marked as exchanged and inventory updated.");
+        Alert.alert(t("success"), t("exchange_success"));
     };
 
     const resetExchangeState = () => {
@@ -204,7 +200,7 @@ export default function OrderHistoryScreen() {
              setSelectedOrder(order);
              setOptionsModalVisible(true);
         } else {
-             Alert.alert("Info", `This order is already ${order.status.toLowerCase()} and cannot be modified further.`);
+             Alert.alert(t("info"), t("order_already_modified", { status: order.status.toLowerCase() }));
         }
     };
 
@@ -319,7 +315,7 @@ export default function OrderHistoryScreen() {
                         )}
 
                         <View className="bg-slate-50 dark:bg-slate-800/30 rounded-2xl p-3 mb-4 border border-slate-100 dark:border-slate-800/50">
-                            <Text className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-2 ml-1">Purchased Items</Text>
+                            <Text className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-2 ml-1">{t('purchased_items')}</Text>
                             {item.items.map((prod, idx) => (
                                 <View key={idx} className="flex-row justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                                     <View className="flex-row items-center flex-1 pr-4">
@@ -334,13 +330,13 @@ export default function OrderHistoryScreen() {
                                 <View className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 border-dashed">
                                     {item.discount && (
                                         <View className="flex-row justify-between items-center mb-1">
-                                            <Text className="text-rose-500 text-xs font-medium">Discount</Text>
+                                            <Text className="text-rose-500 text-xs font-medium">{t('discount')}</Text>
                                             <Text className="text-rose-500 text-xs font-bold">-৳{item.discount.amountCalculated.toFixed(2)}</Text>
                                         </View>
                                     )}
                                     {item.tax && (
                                         <View className="flex-row justify-between items-center">
-                                            <Text className="text-slate-500 text-xs font-medium">Tax ({item.tax.taxRate}%)</Text>
+                                            <Text className="text-slate-500 text-xs font-medium">{t('tax')} ({item.tax.taxRate}%)</Text>
                                             <Text className="text-slate-500 text-xs font-bold">৳{item.tax.taxAmount.toFixed(2)}</Text>
                                         </View>
                                     )}
@@ -373,7 +369,7 @@ export default function OrderHistoryScreen() {
                                 <View className="bg-rose-50 dark:bg-rose-500/10 p-3 rounded-xl flex-row items-start border border-rose-100 dark:border-rose-500/20">
                                     <Ionicons name="information-circle" size={16} color="#e11d48" className="mr-2 mt-0.5" />
                                     <View className="ml-2 flex-1">
-                                        <Text className="text-rose-800 dark:text-rose-300 text-xs font-bold mb-0.5">Refunded</Text>
+                                        <Text className="text-rose-800 dark:text-rose-300 text-xs font-bold mb-0.5">{t('refunded')}</Text>
                                         <Text className="text-rose-600/80 dark:text-rose-400/80 text-[11px] leading-4">{item.refundDetails.reason}</Text>
                                     </View>
                                 </View>
@@ -383,16 +379,16 @@ export default function OrderHistoryScreen() {
                                 <View className="bg-violet-50 dark:bg-violet-500/10 p-3 rounded-xl flex-row items-start border border-violet-100 dark:border-violet-500/20">
                                     <Ionicons name="swap-horizontal" size={16} color="#8b5cf6" className="mr-2 mt-0.5" />
                                     <View className="ml-2 flex-1">
-                                        <Text className="text-violet-800 dark:text-violet-300 text-xs font-bold mb-0.5">Exchanged</Text>
+                                        <Text className="text-violet-800 dark:text-violet-300 text-xs font-bold mb-0.5">{t('exchanged')}</Text>
                                         <Text className="text-violet-600/80 dark:text-violet-400/80 text-[11px] leading-4">
                                             {item.exchangeDetails.reason}
-                                            (Diff: {item.exchangeDetails.priceDifference > 0 ? '+' : ''}৳{item.exchangeDetails.priceDifference})
+                                            ({t('diff_label')}: {item.exchangeDetails.priceDifference > 0 ? '+' : ''}৳{item.exchangeDetails.priceDifference})
                                         </Text>
                                         {item.exchangeDetails.paymentMethod && (
                                             <View className="flex-row items-center mt-1">
                                                 <Ionicons name={getPaymentIcon(item.exchangeDetails.paymentMethod)} size={10} color="#8b5cf6" className="mr-1" />
                                                 <Text className="text-violet-600/80 dark:text-violet-400/80 text-[10px] font-bold">
-                                                    Paid via {item.exchangeDetails.paymentMethod}
+                                                    {t('paid_via')} {item.exchangeDetails.paymentMethod}
                                                 </Text>
                                             </View>
                                         )}
@@ -409,7 +405,7 @@ export default function OrderHistoryScreen() {
                                 className="px-4 py-2 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600 flex-row items-center shadow-sm"
                             >
                                 <Ionicons name="settings-outline" size={14} color="#64748b" />
-                                <Text className="text-slate-600 dark:text-slate-300 text-xs font-bold ml-1.5">Manage</Text>
+                                <Text className="text-slate-600 dark:text-slate-300 text-xs font-bold ml-1.5">{t('manage')}</Text>
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity
@@ -417,7 +413,7 @@ export default function OrderHistoryScreen() {
                             className="px-4 py-2 bg-blue-600 rounded-xl flex-row items-center shadow-sm shadow-blue-500/30"
                         >
                             <Ionicons name="print" size={14} color="white" />
-                            <Text className="text-white text-xs font-bold ml-1.5">Print Receipt</Text>
+                            <Text className="text-white text-xs font-bold ml-1.5">{t('print_receipt')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -437,9 +433,9 @@ export default function OrderHistoryScreen() {
                         <Ionicons name="chevron-back" size={24} color={colorScheme === 'dark' ? '#cbd5e1' : '#334155'} />
                     </TouchableOpacity>
                     <View>
-                        <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Sales History</Text>
+                        <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t('sales_history')}</Text>
                         <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mt-0.5">
-                            {orders.length} {orders.length === 1 ? 'Order' : 'Orders'} Recorded
+                            {t('orders_recorded', { count: orders.length })}
                         </Text>
                     </View>
                 </View>
@@ -466,9 +462,9 @@ export default function OrderHistoryScreen() {
                         <View className="bg-white dark:bg-slate-900 h-32 w-32 rounded-full items-center justify-center mb-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
                             <Ionicons name="receipt-outline" size={48} color="#94a3b8" />
                         </View>
-                        <Text className="text-slate-800 dark:text-white text-2xl font-black tracking-tight text-center">No sales history</Text>
+                        <Text className="text-slate-800 dark:text-white text-2xl font-black tracking-tight text-center">{t('no_sales_history')}</Text>
                         <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-2 text-center leading-5">
-                            When you complete checkout from the POS screen, your receipts will appear here.
+                            {t('no_sales_history_desc')}
                         </Text>
                     </View>
                 }
@@ -484,7 +480,7 @@ export default function OrderHistoryScreen() {
                 <View className="flex-1 justify-center items-center bg-slate-900/60 backdrop-blur-sm p-6">
                     <View className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-slate-100 dark:border-slate-800">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Order Action</Text>
+                            <Text className="text-xl font-black text-slate-800 dark:text-white tracking-tight">{t('order_action')}</Text>
                             <TouchableOpacity onPress={() => setOptionsModalVisible(false)} className="h-8 w-8 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center">
                                 <Ionicons name="close" size={18} color="#64748b" />
                             </TouchableOpacity>
@@ -493,11 +489,11 @@ export default function OrderHistoryScreen() {
                         {selectedOrder && (
                             <View className="mb-6 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <View className="flex-row justify-between items-center mb-1">
-                                    <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Order ID</Text>
+                                    <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{t('order_id')}</Text>
                                     <Text className="text-slate-800 dark:text-slate-200 font-bold text-sm">#{selectedOrder.id.slice(-6).toUpperCase()}</Text>
                                 </View>
                                 <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
-                                    <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Total Value</Text>
+                                    <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">{t('total_value')}</Text>
                                     <Text className="text-blue-600 dark:text-blue-400 font-black text-lg">৳{selectedOrder.totalAmount.toLocaleString()}</Text>
                                 </View>
                             </View>
@@ -514,7 +510,7 @@ export default function OrderHistoryScreen() {
                                     className="bg-violet-500 py-4 rounded-2xl items-center flex-row justify-center gap-3 shadow-sm shadow-violet-500/30 active:bg-violet-600"
                                 >
                                     <Ionicons name="swap-horizontal" size={20} color="white" />
-                                    <Text className="text-white font-bold text-base tracking-wide">Exchange Products</Text>
+                                    <Text className="text-white font-bold text-base tracking-wide">{t('exchange_products')}</Text>
                                 </TouchableOpacity>
                             )}
 
@@ -527,7 +523,7 @@ export default function OrderHistoryScreen() {
                                     className="bg-amber-500 py-4 rounded-2xl items-center flex-row justify-center gap-3 shadow-sm shadow-amber-500/30 active:bg-amber-600"
                                 >
                                     <Ionicons name="return-up-back" size={20} color="white" />
-                                    <Text className="text-white font-bold text-base tracking-wide">Process Return</Text>
+                                    <Text className="text-white font-bold text-base tracking-wide">{t('process_return')}</Text>
                                 </TouchableOpacity>
                             )}
 
@@ -539,12 +535,12 @@ export default function OrderHistoryScreen() {
                                     className="bg-rose-500 py-4 rounded-2xl items-center flex-row justify-center gap-3 shadow-sm shadow-rose-500/30 active:bg-rose-600 mt-2"
                                 >
                                     <Ionicons name="cash" size={20} color="white" />
-                                    <Text className="text-white font-bold text-base tracking-wide">Full Refund</Text>
+                                    <Text className="text-white font-bold text-base tracking-wide">{t('full_refund')}</Text>
                                 </TouchableOpacity>
                             ) : (
                                 <View className="bg-slate-100 dark:bg-slate-800 py-4 rounded-2xl items-center flex-row justify-center gap-2 mt-2 border border-slate-200 dark:border-slate-700 opacity-70">
                                     <Ionicons name="lock-closed" size={16} color="#94a3b8" />
-                                    <Text className="text-slate-500 font-bold text-sm tracking-wide">Admin Full Refund</Text>
+                                    <Text className="text-slate-500 font-bold text-sm tracking-wide">{t('admin_full_refund')}</Text>
                                 </View>
                             )}
                         </View>
@@ -564,8 +560,8 @@ export default function OrderHistoryScreen() {
                         <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl border-t border-slate-200 dark:border-slate-800">
                              <View className="flex-row justify-between items-center mb-6">
                                 <View>
-                                    <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Process Return</Text>
-                                    <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Provide a reason for this return</Text>
+                                    <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t('process_return')}</Text>
+                                    <Text className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">{t('provide_return_reason')}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => setReturnModalVisible(false)} className="h-10 w-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center">
                                     <Ionicons name="close" size={20} color="#64748b" />
@@ -573,10 +569,10 @@ export default function OrderHistoryScreen() {
                             </View>
 
                             <View className="mb-6">
-                                <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">Return Reason</Text>
+                                <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('return_reason')}</Text>
                                 <TextInput
                                     className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 text-slate-800 dark:text-white text-base font-medium shadow-sm"
-                                    placeholder="e.g. Defective item, Changed mind..."
+                                    placeholder={t('defective_item_placeholder')}
                                     placeholderTextColor="#94a3b8"
                                     multiline
                                     numberOfLines={4}
@@ -590,7 +586,7 @@ export default function OrderHistoryScreen() {
                                 onPress={submitReturn}
                                 className="bg-amber-500 py-5 rounded-2xl items-center mt-4 shadow-lg shadow-amber-500/30 active:bg-amber-600 mb-8"
                             >
-                                <Text className="text-white font-black text-lg tracking-wide">Confirm Return</Text>
+                                <Text className="text-white font-black text-lg tracking-wide">{t('confirm_return')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -615,7 +611,7 @@ export default function OrderHistoryScreen() {
 
                              <View className="flex-row justify-between items-center mb-4">
                                 <View>
-                                    <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Product Exchange</Text>
+                                    <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">{t('product_exchange')}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => setExchangeModalVisible(false)} className="h-10 w-10 bg-slate-100 dark:bg-slate-800 rounded-full items-center justify-center">
                                     <Ionicons name="close" size={20} color="#64748b" />
@@ -628,11 +624,11 @@ export default function OrderHistoryScreen() {
                                     {exchangeList.length > 0 && (
                                         <TouchableOpacity onPress={() => setIsAddingPair(false)} className="mb-4 flex-row items-center bg-slate-100 dark:bg-slate-800 p-2 rounded-lg self-start">
                                             <Ionicons name="arrow-back" size={16} color="#6366f1" />
-                                            <Text className="text-indigo-600 dark:text-indigo-400 font-bold ml-1 text-xs">Back to List</Text>
+                                            <Text className="text-indigo-600 dark:text-indigo-400 font-bold ml-1 text-xs">{t('back_to_list')}</Text>
                                         </TouchableOpacity>
                                     )}
 
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">1. Select item to return</Text>
+                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('select_item_to_return')}</Text>
                                     <View className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-2 mb-6 border border-slate-200 dark:border-slate-700">
                                         {selectedOrder?.items.map((item) => (
                                             <TouchableOpacity
@@ -656,13 +652,13 @@ export default function OrderHistoryScreen() {
                                         ))}
                                     </View>
 
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">2. Search new item to give</Text>
+                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('search_new_item')}</Text>
                                     <View className="mb-6 z-50">
                                         <View className="flex-row items-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 z-50">
                                             <Ionicons name="search" size={18} color="#94a3b8" />
                                             <TextInput
                                                 className="flex-1 p-3 text-slate-800 dark:text-white font-medium"
-                                                placeholder="Search by name or barcode..."
+                                                placeholder={t('search_by_name_or_barcode')}
                                                 placeholderTextColor="#94a3b8"
                                                 value={searchQuery}
                                                 onChangeText={(text) => {
@@ -712,7 +708,7 @@ export default function OrderHistoryScreen() {
 
                                     {currentReturnItem && currentNewProduct && (
                                         <View className="mb-6">
-                                            <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">3. Set Exchange Quantity</Text>
+                                            <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('set_exchange_quantity')}</Text>
                                             <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 self-start">
                                                 <TouchableOpacity
                                                     onPress={() => setCurrentExchangeQty(Math.max(1, currentExchangeQty - 1))}
@@ -729,7 +725,7 @@ export default function OrderHistoryScreen() {
                                                 </TouchableOpacity>
                                             </View>
                                             {currentExchangeQty === currentReturnItem.quantity && (
-                                                <Text className="text-xs text-slate-500 mt-2 ml-1">Maximum purchased quantity reached.</Text>
+                                                <Text className="text-xs text-slate-500 mt-2 ml-1">{t('max_quantity_reached')}</Text>
                                             )}
                                         </View>
                                     )}
@@ -749,19 +745,19 @@ export default function OrderHistoryScreen() {
                                         className={`py-4 rounded-2xl items-center shadow-sm ${(!currentReturnItem || !currentNewProduct) ? 'bg-slate-300 dark:bg-slate-700' : 'bg-blue-600 shadow-blue-500/30 active:bg-blue-700'}`}
                                     >
                                         <Text className={`font-black text-lg tracking-wide ${(!currentReturnItem || !currentNewProduct) ? 'text-slate-500 dark:text-slate-400' : 'text-white'}`}>
-                                            Add to Exchange List
+                                            {t('add_to_exchange_list')}
                                         </Text>
                                     </TouchableOpacity>
                                 </ScrollView>
                             ) : (
                                 // --- EXCHANGE LIST SUMMARY VIEW ---
                                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">Exchange List</Text>
+                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('exchange_list')}</Text>
 
                                     {exchangeList.map((pair) => (
                                         <View key={pair.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 mb-3 border border-slate-200 dark:border-slate-700">
                                             <View className="flex-row justify-between items-start mb-2">
-                                                <Text className="text-rose-600 dark:text-rose-400 font-bold text-xs">Return: {pair.returnItem.name} (x{pair.quantity})</Text>
+                                                <Text className="text-rose-600 dark:text-rose-400 font-bold text-xs">{t('return_item_label')}: {pair.returnItem.name} (x{pair.quantity})</Text>
                                                 <TouchableOpacity onPress={() => setExchangeList(exchangeList.filter(p => p.id !== pair.id))}>
                                                     <Ionicons name="trash-outline" size={16} color="#ef4444" />
                                                 </TouchableOpacity>
@@ -770,9 +766,9 @@ export default function OrderHistoryScreen() {
                                                 <Ionicons name="arrow-down" size={14} color="#64748b" />
                                             </View>
                                             <View className="flex-row justify-between items-start">
-                                                <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">Give: {pair.newProduct.name} (x{pair.quantity})</Text>
+                                                <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">{t('give_item_label')}: {pair.newProduct.name} (x{pair.quantity})</Text>
                                                 <Text className="text-slate-500 dark:text-slate-400 font-bold text-xs">
-                                                    Diff: ৳{((pair.newProduct.price - pair.returnItem.price) * pair.quantity).toFixed(2)}
+                                                    {t('diff_label')}: ৳{((pair.newProduct.price - pair.returnItem.price) * pair.quantity).toFixed(2)}
                                                 </Text>
                                             </View>
                                         </View>
@@ -782,24 +778,24 @@ export default function OrderHistoryScreen() {
                                         onPress={() => setIsAddingPair(true)}
                                         className="py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-500/50 items-center mb-6 bg-indigo-50 dark:bg-indigo-500/10"
                                     >
-                                        <Text className="text-indigo-600 dark:text-indigo-400 font-bold">+ Add Another Product</Text>
+                                        <Text className="text-indigo-600 dark:text-indigo-400 font-bold">{t('add_another_product')}</Text>
                                     </TouchableOpacity>
 
                                     <View className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-4 mb-6 border border-violet-100 dark:border-violet-500/30">
-                                        <Text className="text-violet-800 dark:text-violet-300 font-bold mb-3 uppercase tracking-wider text-xs">Total Summary</Text>
+                                        <Text className="text-violet-800 dark:text-violet-300 font-bold mb-3 uppercase tracking-wider text-xs">{t('total_summary')}</Text>
 
                                         <View className="flex-row justify-between items-center mb-2">
-                                            <Text className="text-slate-600 dark:text-slate-400">Total Taking Back:</Text>
+                                            <Text className="text-slate-600 dark:text-slate-400">{t('total_taking_back')}</Text>
                                             <Text className="text-rose-600 dark:text-rose-400 font-bold">- ৳{totalReturnValue}</Text>
                                         </View>
                                         <View className="flex-row justify-between items-center mb-3 pb-3 border-b border-violet-200 dark:border-violet-500/30">
-                                            <Text className="text-slate-600 dark:text-slate-400">Total Giving New:</Text>
+                                            <Text className="text-slate-600 dark:text-slate-400">{t('total_giving_new')}</Text>
                                             <Text className="text-emerald-600 dark:text-emerald-400 font-bold">+ ৳{totalNewValue}</Text>
                                         </View>
 
                                         <View className="flex-row justify-between items-center">
                                             <Text className="text-slate-800 dark:text-slate-200 font-black text-lg">
-                                                {calculatedDiff > 0 ? 'Customer Pays' : calculatedDiff < 0 ? 'Shop Refunds' : 'Even Exchange'}
+                                                {calculatedDiff > 0 ? t('customer_pays') : calculatedDiff < 0 ? t('shop_refunds') : t('even_exchange')}
                                             </Text>
                                             <Text className={`font-black text-2xl ${calculatedDiff > 0 ? 'text-blue-600' : calculatedDiff < 0 ? 'text-rose-600' : 'text-slate-500'}`}>
                                                 ৳{Math.abs(calculatedDiff)}
@@ -807,10 +803,10 @@ export default function OrderHistoryScreen() {
                                         </View>
                                     </View>
 
-                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">Reason for Exchange</Text>
+                                    <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">{t('reason_for_exchange')}</Text>
                                     <TextInput
                                         className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-slate-800 dark:text-white text-base mb-8 font-medium shadow-sm"
-                                        placeholder="e.g. Size didn't fit, Multiple items..."
+                                        placeholder={t('exchange_reason_placeholder')}
                                         placeholderTextColor="#94a3b8"
                                         value={exchangeReason}
                                         onChangeText={setExchangeReason}
@@ -821,7 +817,7 @@ export default function OrderHistoryScreen() {
                                         className="py-4 rounded-2xl items-center shadow-sm bg-violet-600 shadow-violet-500/30 active:bg-violet-700 mb-8"
                                     >
                                         <Text className="font-black text-lg tracking-wide text-white">
-                                            {calculatedDiff > 0 ? `Pay ৳${calculatedDiff} & Confirm` : 'Confirm All Exchanges'}
+                                            {calculatedDiff > 0 ? t('pay_and_confirm', { amount: calculatedDiff }) : t('confirm_all_exchanges')}
                                         </Text>
                                     </TouchableOpacity>
                                 </ScrollView>

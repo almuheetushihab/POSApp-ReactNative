@@ -67,11 +67,11 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
-                    name="reports"
+                    name="history"
                     options={{
-                        title: t('nav_reports') || 'Reports',
+                        title: t('nav_history'),
                         tabBarIcon: ({color, size}) => (
-                            <Ionicons name="bar-chart-outline" size={size} color={color}/>
+                            <Ionicons name="receipt-outline" size={size} color={color}/>
                         ),
                     }}
                 />

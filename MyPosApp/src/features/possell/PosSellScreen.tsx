@@ -95,9 +95,9 @@ export default function POSScreen() {
 
         if (product) {
             addToCart(product);
-            showToast(`${product.name} added`, 'success');
+            showToast(t('product_added', { productName: product.name }), 'success');
         } else {
-            showToast("Product not found", 'error');
+            showToast(t('product_not_found'), 'error');
         }
     };
 
@@ -149,7 +149,7 @@ export default function POSScreen() {
 
     const initiateCheckout = () => {
         if (!isCheckoutEnabled()) {
-            Alert.alert("Missing Info", "Please provide customer name and phone number to proceed.");
+            Alert.alert(t('missing_info'), t('missing_info_desc'));
             return;
         }
         setIsPaymentModalVisible(true);
@@ -245,7 +245,7 @@ export default function POSScreen() {
                 <View className="flex-row justify-between items-center px-4 mb-4">
                     <View style={{width: 40}}/>
 
-                    <Text className="text-xl font-bold text-center text-slate-800 dark:text-white">New Sale</Text>
+                    <Text className="text-xl font-bold text-center text-slate-800 dark:text-white">{t('new_sale')}</Text>
 
                     <TouchableOpacity
                         onPress={() => setIsScannerVisible(true)}
@@ -291,7 +291,7 @@ export default function POSScreen() {
                 ListEmptyComponent={
                     <View className="flex-1 justify-center items-center mt-20">
                         <Ionicons name="cube-outline" size={50} color="#cbd5e1"/>
-                        <Text className="text-slate-400 mt-2">No products available</Text>
+                        <Text className="text-slate-400 mt-2">{t('no_products_available')}</Text>
                     </View>
                 }
             />
@@ -306,7 +306,7 @@ export default function POSScreen() {
                         <View className="bg-orange-500 h-8 w-8 rounded-full items-center justify-center">
                             <Text className="text-white font-bold">{getTotalItems()}</Text>
                         </View>
-                        <Text className="text-white text-lg font-medium">View Cart</Text>
+                        <Text className="text-white text-lg font-medium">{t('view_cart')}</Text>
                     </View>
                     <Text className="text-white text-2xl font-bold">৳ {subTotal}</Text>
                 </TouchableOpacity>
@@ -322,7 +322,7 @@ export default function POSScreen() {
                     <View className="flex-1 bg-gray-50 dark:bg-slate-950">
                         <View
                             className="flex-row justify-between items-center p-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 z-50">
-                            <Text className="text-2xl font-bold text-slate-800 dark:text-white">Current Order</Text>
+                            <Text className="text-2xl font-bold text-slate-800 dark:text-white">{t('current_order')}</Text>
                             <TouchableOpacity onPress={() => setIsCartVisible(false)}>
                                 <Ionicons name="close-circle" size={30} color="#94a3b8"/>
                             </TouchableOpacity>
@@ -379,18 +379,18 @@ export default function POSScreen() {
                                 <View className="flex-row items-center justify-between mb-4 z-50">
                                     <View className="flex-row items-center gap-2">
                                         <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-                                        <Text className="text-lg font-bold text-slate-800 dark:text-white">Customer Details</Text>
+                                        <Text className="text-lg font-bold text-slate-800 dark:text-white">{t('customer_details')}</Text>
                                     </View>
-                                    <Text className="text-rose-500 text-xs font-bold bg-rose-50 px-2 py-1 rounded-md">Required *</Text>
+                                    <Text className="text-rose-500 text-xs font-bold bg-rose-50 px-2 py-1 rounded-md">{t('required')}</Text>
                                 </View>
 
                                 <View className="mb-3 z-50 relative">
-                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Search Phone Number</Text>
+                                    <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">{t('search_phone')}</Text>
                                     <View className="flex-row items-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 z-50">
                                         <Ionicons name="search" size={18} color="#94a3b8" />
                                         <TextInput
                                             className="flex-1 p-3 text-slate-800 dark:text-white font-medium"
-                                            placeholder="Enter Phone Number..."
+                                            placeholder={t('enter_phone')}
                                             placeholderTextColor="#94a3b8"
                                             keyboardType="phone-pad"
                                             value={searchQuery}
@@ -435,10 +435,10 @@ export default function POSScreen() {
 
                                 <View className="flex-row gap-3 z-10">
                                     <View className="flex-1">
-                                        <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">Name <Text className="text-red-500">*</Text></Text>
+                                        <Text className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">{t('full_name')} <Text className="text-red-500">*</Text></Text>
                                         <TextInput
                                             className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-white font-medium"
-                                            placeholder="Full Name"
+                                            placeholder={t('full_name')}
                                             placeholderTextColor="#94a3b8"
                                             value={customerName}
                                             onChangeText={setCustomerName}
@@ -450,7 +450,7 @@ export default function POSScreen() {
                             <View className="mt-4 mb-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm z-10">
                                 <View className="flex-row items-center gap-2 mb-4">
                                     <Ionicons name="pricetag-outline" size={20} color="#f59e0b" />
-                                    <Text className="text-lg font-bold text-slate-800 dark:text-white">Apply Discount</Text>
+                                    <Text className="text-lg font-bold text-slate-800 dark:text-white">{t('apply_discount')}</Text>
                                 </View>
 
                                 <View className="flex-row items-center gap-3">
@@ -459,13 +459,13 @@ export default function POSScreen() {
                                             onPress={() => setDiscountType('FIXED')}
                                             className={`px-4 py-2 rounded-lg ${discountType === 'FIXED' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                         >
-                                            <Text className={`font-bold ${discountType === 'FIXED' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>৳ Fixed</Text>
+                                            <Text className={`font-bold ${discountType === 'FIXED' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>৳ {t('fixed')}</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             onPress={() => setDiscountType('PERCENTAGE')}
                                             className={`px-4 py-2 rounded-lg ${discountType === 'PERCENTAGE' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                         >
-                                            <Text className={`font-bold ${discountType === 'PERCENTAGE' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>% Percent</Text>
+                                            <Text className={`font-bold ${discountType === 'PERCENTAGE' ? 'text-blue-600 dark:text-white' : 'text-slate-500'}`}>% {t('percentage')}</Text>
                                         </TouchableOpacity>
                                     </View>
 
@@ -483,13 +483,13 @@ export default function POSScreen() {
 
                         <View className="p-6 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 z-10">
                             <View className="flex-row justify-between mb-2">
-                                <Text className="text-slate-500 font-medium">Subtotal</Text>
+                                <Text className="text-slate-500 font-medium">{t('subtotal')}</Text>
                                 <Text className="text-slate-800 dark:text-white font-bold">৳ {subTotal}</Text>
                             </View>
 
                             {discountAmount > 0 && (
                                 <View className="flex-row justify-between mb-2">
-                                    <Text className="text-rose-500 font-medium">Discount {discountType === 'PERCENTAGE' ? `(${val}%)` : ''}</Text>
+                                    <Text className="text-rose-500 font-medium">{t('apply_discount')} {discountType === 'PERCENTAGE' ? `(${val}%)` : ''}</Text>
                                     <Text className="text-rose-600 font-bold">- ৳ {discountAmount.toFixed(2)}</Text>
                                 </View>
                             )}
@@ -507,7 +507,7 @@ export default function POSScreen() {
                             )}
 
                             <View className="flex-row justify-between mb-6 pt-3 border-t border-gray-100 dark:border-slate-800">
-                                <Text className="text-slate-800 dark:text-white text-xl font-bold">Total</Text>
+                                <Text className="text-slate-800 dark:text-white text-xl font-bold">{t('total')}</Text>
                                 <Text className="text-blue-600 text-2xl font-extrabold">৳ {finalTotal.toFixed(2)}</Text>
                             </View>
 
@@ -521,16 +521,16 @@ export default function POSScreen() {
                                     setIsCartVisible(false);
                                 }}
                                     className="flex-1 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 p-4 rounded-xl items-center">
-                                    <Text className="text-red-600 dark:text-red-400 font-bold text-lg">Clear All</Text>
+                                    <Text className="text-red-600 dark:text-red-400 font-bold text-lg">{t('clear_all')}</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity onPress={initiateCheckout}
                                                   className={`flex-[2] p-4 rounded-xl items-center shadow-md flex-row justify-center gap-2 ${isCheckoutEnabled() ? 'bg-blue-600 shadow-blue-500/30 active:bg-blue-700' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                                    <Text className={`${isCheckoutEnabled() ? 'text-white' : 'text-slate-500'} font-bold text-lg`}>Pay ৳ {finalTotal.toFixed(0)}</Text>
+                                    <Text className={`${isCheckoutEnabled() ? 'text-white' : 'text-slate-500'} font-bold text-lg`}>{t('pay')} ৳ {finalTotal.toFixed(0)}</Text>
                                     <Ionicons name="arrow-forward" size={20} color={isCheckoutEnabled() ? "white" : "#64748b"} />
                                 </TouchableOpacity>
                             </View>
                             {!isCheckoutEnabled() && (
-                                <Text className="text-rose-500 text-xs text-center mt-2 font-medium">Customer name & phone are required to checkout</Text>
+                                <Text className="text-rose-500 text-xs text-center mt-2 font-medium">{t('checkout_error')}</Text>
                             )}
                         </View>
                     </View>

@@ -21,9 +21,9 @@ export const DashboardScreen = () => {
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 18) return "Good Afternoon";
-        return "Good Evening";
+        if (hour < 12) return t("greeting_morning");
+        if (hour < 18) return t("greeting_afternoon");
+        return t("greeting_evening");
     };
 
     const onRefresh = useCallback(async () => {
@@ -39,12 +39,12 @@ export const DashboardScreen = () => {
 
     const handleLogout = () => {
         Alert.alert(
-            "Logout",
-            "Are you sure you want to log out?",
+            t("logout_confirm_title"),
+            t("logout_confirm_message"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("cancel"), style: "cancel" },
                 { 
-                    text: "Logout", 
+                    text: t("logout"), 
                     style: "destructive", 
                     onPress: () => {
                         logout();
@@ -84,7 +84,7 @@ export const DashboardScreen = () => {
                             </Text>
                             <View className="flex-row items-center mt-1">
                                 <Text className="text-slate-500 dark:text-slate-400 font-medium">
-                                    {user?.name || 'User'}
+                                    {user?.name || t('user')}
                                 </Text>
                                 <View className={`ml-2 px-2 py-0.5 rounded-md ${
                                     user?.role === 'Admin' ? 'bg-rose-100' :
@@ -93,7 +93,7 @@ export const DashboardScreen = () => {
                                     <Text className={`text-[10px] font-bold ${
                                         user?.role === 'Admin' ? 'text-rose-700' :
                                         user?.role === 'Manager' ? 'text-purple-700' : 'text-green-700'
-                                    }`}>{user?.role || 'Guest'}</Text>
+                                    }`}>{user?.role || t('guest')}</Text>
                                 </View>
                             </View>
                         </View>
@@ -136,7 +136,7 @@ export const DashboardScreen = () => {
                                 <View className="bg-rose-400/30 h-8 w-8 rounded-full items-center justify-center mb-2">
                                     <Ionicons name="time-outline" size={18} color="white"/>
                                 </View>
-                                <Text className="text-rose-100 text-xs font-medium uppercase tracking-wider">Last Sale</Text>
+                                <Text className="text-rose-100 text-xs font-medium uppercase tracking-wider">{t('last_sale')}</Text>
                                 <Text className="text-white text-2xl font-bold mt-1">
                                     ৳ {orders.length > 0 ? orders[0].totalAmount : 0}
                                 </Text>
@@ -150,15 +150,15 @@ export const DashboardScreen = () => {
                             <Ionicons name="lock-closed" size={24} color="#3b82f6" />
                         </View>
                         <View className="flex-1">
-                            <Text className="text-blue-800 dark:text-blue-300 font-bold text-base">Analytics Hidden</Text>
-                            <Text className="text-blue-600 dark:text-blue-400 text-xs mt-1">Sales and product reports are restricted to Admin & Manager roles.</Text>
+                            <Text className="text-blue-800 dark:text-blue-300 font-bold text-base">{t('analytics_hidden')}</Text>
+                            <Text className="text-blue-600 dark:text-blue-400 text-xs mt-1">{t('analytics_hidden_desc')}</Text>
                         </View>
                     </View>
                 )}
 
                 {/* Quick Actions */}
                 <Text className="text-xl font-bold text-slate-800 dark:text-white mb-4 mt-2">
-                    {t('quick_actions') || 'Quick Actions'}
+                    {t('quick_actions')}
                 </Text>
 
                 <View className="flex-row flex-wrap justify-between">
@@ -181,7 +181,7 @@ export const DashboardScreen = () => {
                     ) : (
                         <QuickActionButton
                             icon="cube" label="Products"
-                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "You don't have permission to manage products.")}
+                            color="#94a3b8" onPress={() => Alert.alert(t('access_denied'), t('permission_products'))}
                             disabled
                         />
                     )}
@@ -194,7 +194,7 @@ export const DashboardScreen = () => {
                     ) : (
                          <QuickActionButton
                             icon="people" label="Customers"
-                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "You don't have permission to manage customers.")}
+                            color="#94a3b8" onPress={() => Alert.alert(t('access_denied'), t('permission_customers'))}
                             disabled
                         />
                     )}
@@ -207,7 +207,7 @@ export const DashboardScreen = () => {
                     ) : (
                         <QuickActionButton
                             icon="settings" label="Settings"
-                            color="#94a3b8" onPress={() => Alert.alert("Access Denied", "Only Admins can access settings.")}
+                            color="#94a3b8" onPress={() => Alert.alert(t('access_denied'), t('permission_settings'))}
                             disabled
                         />
                     )}
@@ -217,9 +217,9 @@ export const DashboardScreen = () => {
                 {orders.length > 0 && (
                     <View className="mt-4">
                         <View className="flex-row justify-between items-center mb-3">
-                            <Text className="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions</Text>
+                            <Text className="text-lg font-bold text-slate-800 dark:text-white">{t('recent_transactions')}</Text>
                             <TouchableOpacity onPress={() => router.push('/history')}>
-                                <Text className="text-blue-600 font-bold text-sm">See All</Text>
+                                <Text className="text-blue-600 font-bold text-sm">{t('see_all')}</Text>
                             </TouchableOpacity>
                         </View>
 

@@ -44,13 +44,13 @@ export default function SettingsScreen() {
 
     const handleSaveShopInfo = () => {
         updateShopInfo(formData);
-        Alert.alert("Success", "Shop information updated successfully!");
+        Alert.alert(t("success"), t("shop_info_success"));
     };
 
     const handleSaveTaxSettings = () => {
         const rate = parseFloat(taxData.taxRate.toString());
         if (taxData.isEnabled && (isNaN(rate) || rate < 0)) {
-            Alert.alert("Error", "Please enter a valid tax rate.");
+            Alert.alert(t("error"), t("invalid_tax_rate"));
             return;
         }
 
@@ -58,7 +58,7 @@ export default function SettingsScreen() {
             ...taxData,
             taxRate: isNaN(rate) ? 0 : rate
         });
-        Alert.alert("Success", "Tax & VAT settings updated successfully!");
+        Alert.alert(t("success"), t("tax_settings_success"));
     };
 
     const handleBackup = async () => {
@@ -66,29 +66,28 @@ export default function SettingsScreen() {
         const result = await BackupService.backupData();
         setIsProcessing(false);
         if (!result.success) {
-            Alert.alert("Backup Failed", "An error occurred during backup. Please try again.");
+            Alert.alert(t("backup_failed"), t("backup_failed_desc"));
         }
     };
 
     const handleRestore = () => {
         Alert.alert(
-            "Restore Data",
-            "Are you sure you want to restore data? This will overwrite all current data in the app. This action cannot be undone.",
+            t("restore_data_title"),
+            t("restore_data_desc"),
             [
-                { text: "Cancel", style: "cancel" },
+                { text: t("cancel"), style: "cancel" },
                 { 
-                    text: "Restore", 
+                    text: t("restore"), 
                     style: "destructive", 
                     onPress: async () => {
                         setIsProcessing(true);
                         const result = await BackupService.restoreData();
                         setIsProcessing(false);
                         if (result.success) {
-                            Alert.alert("Restore Successful", "Your data has been restored. The app will now reload.");
-                            // You might want to force a reload of the app or key components here
+                            Alert.alert(t("restore_success"), t("restore_success_desc"));
                             router.replace('/(tabs)/');
                         } else {
-                            Alert.alert("Restore Failed", result.message || "An error occurred. Please check the backup file and try again.");
+                            Alert.alert(t("restore_failed"), result.message || t("restore_failed_desc"));
                         }
                     }
                 }
@@ -109,7 +108,7 @@ export default function SettingsScreen() {
                     <Ionicons name="arrow-back" size={24} color="#64748b" />
                 </Pressable>
                 <Text className="text-2xl font-bold text-slate-800 dark:text-white">
-                    {t('settings') || 'Settings'}
+                    {t('settings')}
                 </Text>
             </View>
 
@@ -117,51 +116,51 @@ export default function SettingsScreen() {
 
                 {/* Shop Configuration Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest">
-                    Shop Configuration
+                    {t('shop_config')}
                 </Text>
 
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
                     <View className="mb-4">
-                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Shop Name</Text>
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('shop_name')}</Text>
                         <TextInput
                             className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
                             value={formData.name}
                             onChangeText={(text) => setFormData({...formData, name: text})}
-                            placeholder="Enter Shop Name"
+                            placeholder={t('enter_shop_name')}
                             placeholderTextColor="#94a3b8"
                         />
                     </View>
 
                     <View className="mb-4">
-                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Address</Text>
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('address')}</Text>
                         <TextInput
                             className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
                             value={formData.address}
                             onChangeText={(text) => setFormData({...formData, address: text})}
-                            placeholder="Enter Address"
+                            placeholder={t('enter_address')}
                             placeholderTextColor="#94a3b8"
                         />
                     </View>
 
                     <View className="mb-4">
-                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Phone</Text>
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('phone')}</Text>
                         <TextInput
                             className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
                             value={formData.phone}
                             onChangeText={(text) => setFormData({...formData, phone: text})}
                             keyboardType="phone-pad"
-                            placeholder="Enter Phone Number"
+                            placeholder={t('enter_phone_number')}
                             placeholderTextColor="#94a3b8"
                         />
                     </View>
 
                     <View className="mb-6">
-                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Receipt Footer Message</Text>
+                        <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('receipt_footer')}</Text>
                         <TextInput
                             className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-medium"
                             value={formData.footerMessage}
                             onChangeText={(text) => setFormData({...formData, footerMessage: text})}
-                            placeholder="Thank you message..."
+                            placeholder={t('thank_you_message')}
                             placeholderTextColor="#94a3b8"
                         />
                     </View>
@@ -171,24 +170,24 @@ export default function SettingsScreen() {
                         className="bg-blue-600 p-4 rounded-xl items-center active:bg-blue-700 flex-row justify-center gap-2"
                     >
                         <Ionicons name="save-outline" size={20} color="white" />
-                        <Text className="text-white font-bold text-base">Save Shop Info</Text>
+                        <Text className="text-white font-bold text-base">{t('save_shop_info')}</Text>
                     </Pressable>
                 </View>
 
                 {/* Data Management Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
-                    Data Management
+                    {t('data_management')}
                 </Text>
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
                     <SettingsLink 
                         icon="cloud-upload-outline" 
-                        label="Backup Data" 
+                        label="backup_data" 
                         onPress={handleBackup} 
                         isProcessing={isProcessing}
                     />
                     <SettingsLink 
                         icon="cloud-download-outline" 
-                        label="Restore Data" 
+                        label="restore_data" 
                         onPress={handleRestore}
                         isProcessing={isProcessing}
                         last
@@ -197,22 +196,22 @@ export default function SettingsScreen() {
 
                 {/* Inventory Management Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
-                    Inventory Management
+                    {t('inventory_management')}
                 </Text>
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
                     <SettingsLink 
                         icon="people-outline" 
-                        label="Manage Suppliers" 
+                        label="manage_suppliers" 
                         onPress={() => router.push('/suppliers')} 
                     />
                     <SettingsLink 
                         icon="receipt-outline" 
-                        label="Purchase Orders" 
+                        label="purchase_orders" 
                         onPress={() => router.push('/inventory/po-list')}
                     />
                     <SettingsLink 
                         icon="add-circle-outline" 
-                        label="Create Purchase Order" 
+                        label="create_purchase_order" 
                         onPress={() => router.push('/inventory/create-po')}
                         last
                     />
@@ -220,7 +219,7 @@ export default function SettingsScreen() {
 
                 {/* TAX & VAT CONFIGURATION SECTION */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
-                    Tax & VAT Configuration
+                    {t('tax_config')}
                 </Text>
 
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
@@ -231,8 +230,8 @@ export default function SettingsScreen() {
                                 <Ionicons name="receipt-outline" size={20} color={taxData.isEnabled ? '#4f46e5' : '#64748b'}/>
                             </View>
                             <View>
-                                <Text className="text-base font-bold text-slate-800 dark:text-white">Enable Tax System</Text>
-                                <Text className="text-xs text-slate-500">Apply tax on POS sales</Text>
+                                <Text className="text-base font-bold text-slate-800 dark:text-white">{t('enable_tax')}</Text>
+                                <Text className="text-xs text-slate-500">{t('apply_tax_desc')}</Text>
                             </View>
                         </View>
                         <Switch
@@ -247,7 +246,7 @@ export default function SettingsScreen() {
                         <>
                             <View className="flex-row gap-3 mb-4">
                                 <View className="flex-[2]">
-                                    <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Tax Name</Text>
+                                    <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('tax_name')}</Text>
                                     <TextInput
                                         className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-bold"
                                         value={taxData.taxName}
@@ -257,7 +256,7 @@ export default function SettingsScreen() {
                                     />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">Rate (%)</Text>
+                                    <Text className="text-slate-600 dark:text-slate-400 mb-1 text-xs font-bold uppercase">{t('rate_percent')}</Text>
                                     <TextInput
                                         className="bg-gray-50 dark:bg-slate-800 p-4 rounded-xl text-slate-800 dark:text-white border border-gray-200 dark:border-slate-700 font-bold text-center"
                                         value={taxData.taxRate.toString()}
@@ -270,25 +269,25 @@ export default function SettingsScreen() {
                             </View>
 
                             <View className="mb-6">
-                                <Text className="text-slate-600 dark:text-slate-400 mb-2 text-xs font-bold uppercase">Tax Calculation Method</Text>
+                                <Text className="text-slate-600 dark:text-slate-400 mb-2 text-xs font-bold uppercase">{t('tax_calc_method')}</Text>
                                 <View className="flex-row bg-gray-100 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700">
                                     <Pressable
                                         onPress={() => setTaxData({...taxData, isInclusive: true})}
                                         className={`flex-1 py-3 items-center rounded-lg ${taxData.isInclusive ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
-                                        <Text className={`font-bold ${taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>Inclusive</Text>
+                                        <Text className={`font-bold ${taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>{t('inclusive')}</Text>
                                     </Pressable>
                                     <Pressable
                                         onPress={() => setTaxData({...taxData, isInclusive: false})}
                                         className={`flex-1 py-3 items-center rounded-lg ${!taxData.isInclusive ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                                     >
-                                        <Text className={`font-bold ${!taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>Exclusive</Text>
+                                        <Text className={`font-bold ${!taxData.isInclusive ? 'text-indigo-600 dark:text-white' : 'text-slate-500'}`}>{t('exclusive')}</Text>
                                     </Pressable>
                                 </View>
                                 <Text className="text-slate-500 dark:text-slate-400 text-[10px] mt-2 text-center">
                                     {taxData.isInclusive 
-                                        ? "Tax is already included in the item's price (Total doesn't increase)." 
-                                        : "Tax is added on top of the subtotal (Total increases)."}
+                                        ? t('inclusive_desc')
+                                        : t('exclusive_desc')}
                                 </Text>
                             </View>
                         </>
@@ -299,13 +298,13 @@ export default function SettingsScreen() {
                         className="bg-indigo-600 p-4 rounded-xl items-center active:bg-indigo-700 flex-row justify-center gap-2"
                     >
                         <Ionicons name="calculator-outline" size={20} color="white" />
-                        <Text className="text-white font-bold text-base">Save Tax Settings</Text>
+                        <Text className="text-white font-bold text-base">{t('save_tax_settings')}</Text>
                     </Pressable>
                 </View>
 
                 {/* Preferences Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
-                    {t('preferences') || 'Preferences'}
+                    {t('preferences')}
                 </Text>
 
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-5 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
@@ -335,7 +334,7 @@ export default function SettingsScreen() {
                                 <Ionicons name="moon" size={20} color={theme === 'dark' ? '#f59e0b' : '#64748b'}/>
                             </View>
                             <Text className="text-base font-bold text-slate-800 dark:text-white">
-                                {t('dark_mode') || 'Dark Mode'}
+                                {t('dark_mode')}
                             </Text>
                         </View>
                         <Switch
@@ -349,7 +348,7 @@ export default function SettingsScreen() {
 
                 {/* Support Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
-                    {t('support') || 'Support & Legal'}
+                    {t('support')}
                 </Text>
 
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
@@ -363,11 +362,11 @@ export default function SettingsScreen() {
                     className="bg-red-50 dark:bg-red-900/10 p-4 rounded-2xl flex-row justify-center items-center gap-2 mt-2 mb-10 border border-red-100 dark:border-red-900/20"
                 >
                     <Ionicons name="log-out-outline" size={20} color="#ef4444"/>
-                    <Text className="text-red-500 font-bold text-lg">{t('logout') || 'Logout Securely'}</Text>
+                    <Text className="text-red-500 font-bold text-lg">{t('logout_securely')}</Text>
                 </Pressable>
 
                 <Text className="text-center text-slate-400 mb-10 text-xs font-bold tracking-widest uppercase">
-                    MyPOS Version 1.0.0
+                    {t('mypos_version')}
                 </Text>
             </ScrollView>
         </SafeAreaView>
@@ -384,7 +383,7 @@ const SettingsLink = ({label, icon, last, onPress, isProcessing = false}: any) =
         >
             <View className="flex-row items-center gap-3">
                 <Ionicons name={icon} size={20} color="#64748b" />
-                <Text className="text-slate-700 dark:text-slate-200 font-bold">{t(label) || label}</Text>
+                <Text className="text-slate-700 dark:text-slate-200 font-bold">{t(label)}</Text>
             </View>
             {isProcessing ? <ActivityIndicator size="small" color="#64748b" /> : <Ionicons name="chevron-forward" size={20} color="#cbd5e1"/>}
         </Pressable>
