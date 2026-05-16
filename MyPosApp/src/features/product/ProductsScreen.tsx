@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 import {
     View,
     Text,
@@ -27,15 +27,13 @@ export default function ProductsScreen() {
     const router = useRouter();
     const {t} = useTranslation();
     const [isCartVisible, setIsCartVisible] = useState(false);
+    const [activeCategory, setActiveCategory] = useState('All');
 
     const {
-        filteredProducts,
+        products,
         isLoading,
         fetchProducts,
         searchProducts,
-        filterByCategory,
-        activeCategory,
-        products
     } = useProductStore();
 
     const {
@@ -51,6 +49,15 @@ export default function ProductsScreen() {
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    const filteredProducts = useMemo(() => {
+        let result = products;
+        if (activeCategory !== 'All') {
+            result = result.filter(p => p.category === activeCategory);
+        }
+        return result;
+    }, [products, activeCategory]);
+
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
@@ -105,7 +112,7 @@ export default function ProductsScreen() {
                     contentContainerStyle={{paddingHorizontal: 20}}
                     renderItem={({item}) => (
                         <TouchableOpacity
-                            onPress={() => filterByCategory(item)}
+                            onPress={() => setActiveCategory(item)}
                             className={`mr-3 px-5 py-2 rounded-full border ${
                                 activeCategory === item
                                     ? 'bg-blue-600 border-blue-600'

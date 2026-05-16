@@ -33,12 +33,12 @@ export default function OrderHistoryScreen() {
     // Modal states
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [isOptionsModalVisible, setOptionsModalVisible] = useState(false);
-    
+
     // Action Modals
     const [isReturnModalVisible, setReturnModalVisible] = useState(false);
     const [isExchangeModalVisible, setExchangeModalVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
-    
+
     // Inputs
     const [returnReason, setReturnReason] = useState('');
     const [exchangeReason, setExchangeReason] = useState('');
@@ -56,7 +56,7 @@ export default function OrderHistoryScreen() {
 
     // Filter products for exchange search
     const filteredProducts = products.filter(
-        p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
              (p.barcode && p.barcode.includes(searchQuery))
     );
 
@@ -66,10 +66,10 @@ export default function OrderHistoryScreen() {
     const calculatedDiff = totalNewValue - totalReturnValue;
 
     // RBAC Permissions
-    const canClearHistory = hasPermission(['Admin']); 
-    const canProcessRefund = hasPermission(['Admin', 'Manager']); 
-    const canProcessReturn = hasPermission(['Admin', 'Manager', 'Cashier']); 
-    const canProcessExchange = hasPermission(['Admin', 'Manager', 'Cashier']); 
+    const canClearHistory = hasPermission(['Admin']);
+    const canProcessRefund = hasPermission(['Admin', 'Manager']);
+    const canProcessReturn = hasPermission(['Admin', 'Manager', 'Cashier']);
+    const canProcessExchange = hasPermission(['Admin', 'Manager', 'Cashier']);
 
     const handleClearHistory = () => {
         Alert.alert(
@@ -170,14 +170,14 @@ export default function OrderHistoryScreen() {
                 oldProductId: pair.returnItem.id,
                 newProductId: pair.newProduct.id,
                 quantity: pair.quantity
-            })), 
+            })),
             priceDifference: calculatedDiff,
             paymentMethod: method,
             splitPaymentDetails: details?.splitDetails,
             cardDetails: details?.cardDetails,
             mfsDetails: details?.mfsDetails,
         });
-        
+
         setIsPaymentModalVisible(false);
         setExchangeModalVisible(false);
         resetExchangeState();
@@ -222,12 +222,12 @@ export default function OrderHistoryScreen() {
     const getStatusIconColor = (status: string) => {
         const isDark = colorScheme === 'dark';
         switch (status) {
-            case 'COMPLETED': return isDark ? '#34d399' : '#059669'; 
-            case 'REFUNDED': return isDark ? '#f472b6' : '#be123c'; 
-            case 'RETURNED': return isDark ? '#fbbf24' : '#d97706'; 
-            case 'PARTIAL_RETURN': return isDark ? '#fb923c' : '#ea580c'; 
-            case 'EXCHANGED': return isDark ? '#a78bfa' : '#7c3aed'; 
-            default: return isDark ? '#94a3b8' : '#475569'; 
+            case 'COMPLETED': return isDark ? '#34d399' : '#059669';
+            case 'REFUNDED': return isDark ? '#f472b6' : '#be123c';
+            case 'RETURNED': return isDark ? '#fbbf24' : '#d97706';
+            case 'PARTIAL_RETURN': return isDark ? '#fb923c' : '#ea580c';
+            case 'EXCHANGED': return isDark ? '#a78bfa' : '#7c3aed';
+            default: return isDark ? '#94a3b8' : '#475569';
         }
     };
 
@@ -271,7 +271,7 @@ export default function OrderHistoryScreen() {
                         </Text>
                     </View>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         activeOpacity={0.7}
                         onLongPress={() => openOptionsModal(item)}
                         className="p-4"
@@ -378,14 +378,14 @@ export default function OrderHistoryScreen() {
                                     </View>
                                 </View>
                             )}
-                            
+
                             {item.exchangeDetails && (
                                 <View className="bg-violet-50 dark:bg-violet-500/10 p-3 rounded-xl flex-row items-start border border-violet-100 dark:border-violet-500/20">
                                     <Ionicons name="swap-horizontal" size={16} color="#8b5cf6" className="mr-2 mt-0.5" />
                                     <View className="ml-2 flex-1">
                                         <Text className="text-violet-800 dark:text-violet-300 text-xs font-bold mb-0.5">Exchanged</Text>
                                         <Text className="text-violet-600/80 dark:text-violet-400/80 text-[11px] leading-4">
-                                            {item.exchangeDetails.reason} 
+                                            {item.exchangeDetails.reason}
                                             (Diff: {item.exchangeDetails.priceDifference > 0 ? '+' : ''}৳{item.exchangeDetails.priceDifference})
                                         </Text>
                                         {item.exchangeDetails.paymentMethod && (
@@ -489,7 +489,7 @@ export default function OrderHistoryScreen() {
                                 <Ionicons name="close" size={18} color="#64748b" />
                             </TouchableOpacity>
                         </View>
-                        
+
                         {selectedOrder && (
                             <View className="mb-6 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                                 <View className="flex-row justify-between items-center mb-1">
@@ -505,7 +505,7 @@ export default function OrderHistoryScreen() {
 
                         <View className="gap-3">
                             {canProcessExchange && (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => {
                                         setOptionsModalVisible(false);
                                         resetExchangeState();
@@ -519,7 +519,7 @@ export default function OrderHistoryScreen() {
                             )}
 
                             {canProcessReturn && (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => {
                                         setOptionsModalVisible(false);
                                         setReturnModalVisible(true);
@@ -530,9 +530,9 @@ export default function OrderHistoryScreen() {
                                     <Text className="text-white font-bold text-base tracking-wide">Process Return</Text>
                                 </TouchableOpacity>
                             )}
-                            
+
                             {canProcessRefund ? (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={() => {
                                         if(selectedOrder) handleFullRefund(selectedOrder);
                                     }}
@@ -586,7 +586,7 @@ export default function OrderHistoryScreen() {
                                 />
                             </View>
 
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={submitReturn}
                                 className="bg-amber-500 py-5 rounded-2xl items-center mt-4 shadow-lg shadow-amber-500/30 active:bg-amber-600 mb-8"
                             >
@@ -612,7 +612,7 @@ export default function OrderHistoryScreen() {
                 <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
                     <View className="flex-1 justify-end bg-slate-900/60 backdrop-blur-sm">
                         <View className="bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl h-[85%] border-t border-slate-200 dark:border-slate-800">
-                            
+
                              <View className="flex-row justify-between items-center mb-4">
                                 <View>
                                     <Text className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Product Exchange</Text>
@@ -631,11 +631,11 @@ export default function OrderHistoryScreen() {
                                             <Text className="text-indigo-600 dark:text-indigo-400 font-bold ml-1 text-xs">Back to List</Text>
                                         </TouchableOpacity>
                                     )}
-                                    
+
                                     <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">1. Select item to return</Text>
                                     <View className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-2 mb-6 border border-slate-200 dark:border-slate-700">
                                         {selectedOrder?.items.map((item) => (
-                                            <TouchableOpacity 
+                                            <TouchableOpacity
                                                 key={item.id}
                                                 onPress={() => {
                                                     setCurrentReturnItem(item);
@@ -644,10 +644,10 @@ export default function OrderHistoryScreen() {
                                                 className={`p-3 rounded-xl flex-row justify-between items-center mb-1 border ${currentReturnItem?.id === item.id ? 'bg-amber-50 border-amber-300 dark:bg-amber-500/20 dark:border-amber-500/30' : 'border-transparent'}`}
                                             >
                                                 <View className="flex-row items-center flex-1">
-                                                    <Ionicons 
-                                                        name={currentReturnItem?.id === item.id ? "radio-button-on" : "radio-button-off"} 
-                                                        size={20} 
-                                                        color={currentReturnItem?.id === item.id ? "#d97706" : "#94a3b8"} 
+                                                    <Ionicons
+                                                        name={currentReturnItem?.id === item.id ? "radio-button-on" : "radio-button-off"}
+                                                        size={20}
+                                                        color={currentReturnItem?.id === item.id ? "#d97706" : "#94a3b8"}
                                                     />
                                                     <Text className="ml-3 text-slate-800 dark:text-slate-200 font-medium flex-1" numberOfLines={1}>{item.name}</Text>
                                                 </View>
@@ -660,7 +660,7 @@ export default function OrderHistoryScreen() {
                                     <View className="mb-6 z-50">
                                         <View className="flex-row items-center bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 z-50">
                                             <Ionicons name="search" size={18} color="#94a3b8" />
-                                            <TextInput 
+                                            <TextInput
                                                 className="flex-1 p-3 text-slate-800 dark:text-white font-medium"
                                                 placeholder="Search by name or barcode..."
                                                 placeholderTextColor="#94a3b8"
@@ -689,8 +689,8 @@ export default function OrderHistoryScreen() {
                                             <View className="absolute top-[100%] left-0 right-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl mt-1 shadow-lg max-h-40 z-50 overflow-hidden">
                                                 <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
                                                     {filteredProducts.map(p => (
-                                                        <TouchableOpacity 
-                                                            key={p.id} 
+                                                        <TouchableOpacity
+                                                            key={p.id}
                                                             onPress={() => {
                                                                 setCurrentNewProduct(p);
                                                                 setSearchQuery(p.name);
@@ -714,14 +714,14 @@ export default function OrderHistoryScreen() {
                                         <View className="mb-6">
                                             <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">3. Set Exchange Quantity</Text>
                                             <View className="flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 self-start">
-                                                <TouchableOpacity 
+                                                <TouchableOpacity
                                                     onPress={() => setCurrentExchangeQty(Math.max(1, currentExchangeQty - 1))}
                                                     className="h-10 w-10 bg-white dark:bg-slate-700 rounded-lg items-center justify-center shadow-sm border border-slate-100 dark:border-slate-600"
                                                 >
                                                     <Ionicons name="remove" size={20} color="#64748b" />
                                                 </TouchableOpacity>
                                                 <Text className="font-bold text-xl w-8 text-center text-slate-800 dark:text-white">{currentExchangeQty}</Text>
-                                                <TouchableOpacity 
+                                                <TouchableOpacity
                                                     onPress={() => setCurrentExchangeQty(Math.min(currentReturnItem.quantity, currentExchangeQty + 1))}
                                                     className="h-10 w-10 bg-white dark:bg-slate-700 rounded-lg items-center justify-center shadow-sm border border-slate-100 dark:border-slate-600"
                                                 >
@@ -734,7 +734,7 @@ export default function OrderHistoryScreen() {
                                         </View>
                                     )}
 
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => {
                                             setExchangeList([...exchangeList, {
                                                 id: Date.now().toString(),
@@ -757,7 +757,7 @@ export default function OrderHistoryScreen() {
                                 // --- EXCHANGE LIST SUMMARY VIEW ---
                                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
                                     <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm mb-2 ml-1">Exchange List</Text>
-                                    
+
                                     {exchangeList.map((pair) => (
                                         <View key={pair.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 mb-3 border border-slate-200 dark:border-slate-700">
                                             <View className="flex-row justify-between items-start mb-2">
@@ -778,7 +778,7 @@ export default function OrderHistoryScreen() {
                                         </View>
                                     ))}
 
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={() => setIsAddingPair(true)}
                                         className="py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-500/50 items-center mb-6 bg-indigo-50 dark:bg-indigo-500/10"
                                     >
@@ -787,7 +787,7 @@ export default function OrderHistoryScreen() {
 
                                     <View className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-4 mb-6 border border-violet-100 dark:border-violet-500/30">
                                         <Text className="text-violet-800 dark:text-violet-300 font-bold mb-3 uppercase tracking-wider text-xs">Total Summary</Text>
-                                        
+
                                         <View className="flex-row justify-between items-center mb-2">
                                             <Text className="text-slate-600 dark:text-slate-400">Total Taking Back:</Text>
                                             <Text className="text-rose-600 dark:text-rose-400 font-bold">- ৳{totalReturnValue}</Text>
@@ -796,7 +796,7 @@ export default function OrderHistoryScreen() {
                                             <Text className="text-slate-600 dark:text-slate-400">Total Giving New:</Text>
                                             <Text className="text-emerald-600 dark:text-emerald-400 font-bold">+ ৳{totalNewValue}</Text>
                                         </View>
-                                        
+
                                         <View className="flex-row justify-between items-center">
                                             <Text className="text-slate-800 dark:text-slate-200 font-black text-lg">
                                                 {calculatedDiff > 0 ? 'Customer Pays' : calculatedDiff < 0 ? 'Shop Refunds' : 'Even Exchange'}
@@ -816,7 +816,7 @@ export default function OrderHistoryScreen() {
                                         onChangeText={setExchangeReason}
                                     />
 
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         onPress={initiateExchange}
                                         className="py-4 rounded-2xl items-center shadow-sm bg-violet-600 shadow-violet-500/30 active:bg-violet-700 mb-8"
                                     >

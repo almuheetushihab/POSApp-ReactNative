@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import {useOrderStore} from "../../store/useOrderStore";
-import {useCallback, useState, useEffect, useRef} from "react";
+import {useCallback, useState, useEffect, useRef, useMemo} from "react";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {Alert, FlatList, Image, Modal, ScrollView, Text, TouchableOpacity, View, TextInput, Animated, KeyboardAvoidingView, Platform} from "react-native";
 import {ProductCard} from "../../components/ProductCard";
@@ -42,14 +42,7 @@ const Toast = ({ message, type, onHide }: { message: string, type: 'success' | '
 
 export default function POSScreen() {
     const {t} = useTranslation();
-    const {
-        filteredProducts,
-        fetchProducts,
-        activeCategory,
-        filterByCategory,
-        products,
-        reduceStock
-    } = useProductStore();
+    const { products, reduceStock } = useProductStore();
     const {
         cart,
         addToCart,
@@ -64,6 +57,7 @@ export default function POSScreen() {
     const {taxSettings} = useSettingsStore();
     const {customers, addCustomer} = useCustomerStore();
 
+    const [activeCategory, setActiveCategory] = useState('All');
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
@@ -84,6 +78,13 @@ export default function POSScreen() {
     // Receipt Modal States
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
+    const filteredProducts = useMemo(() => {
+        if (activeCategory === 'All') {
+            return products;
+        }
+        return products.filter(p => p.category === activeCategory);
+    }, [products, activeCategory]);
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -263,7 +264,7 @@ export default function POSScreen() {
                     contentContainerStyle={{paddingHorizontal: 15}}
                     renderItem={({item}) => (
                         <TouchableOpacity
-                            onPress={() => filterByCategory(item)}
+                            onPress={() => setActiveCategory(item)}
                             className={`mr-2 px-4 py-2 rounded-full border ${activeCategory === item ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700'}`}
                         >
                             <Text
