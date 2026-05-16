@@ -8,11 +8,13 @@ import {Ionicons} from "@expo/vector-icons";
 import {OrderSuccessModal} from "../../components/OrderSuccessModal";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
-import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymentDetails, DiscountDetails, CustomerDetails, TaxDetails} from "../../types/order";
+import {Order, PaymentMethod, SplitPaymentDetails, CardPaymentDetails, MFSPaymentDetails, DiscountDetails, CustomerDetails, TaxDetails, ProductAttributes} from "../../types/order";
 import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
+import { Product } from "../../types/product";
+import { AttributeSelectionModal } from "../../components/AttributeSelectionModal";
 
 // Simple Toast Component
 const Toast = ({ message, type, onHide }: { message: string, type: 'success' | 'error', onHide: () => void }) => {
@@ -57,10 +59,12 @@ export default function POSScreen() {
     const {taxSettings} = useSettingsStore();
     const {customers, addCustomer} = useCustomerStore();
 
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [activeCategory, setActiveCategory] = useState<ProductCategory>('Other');
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+    const [isAttributeModalVisible, setIsAttributeModalVisible] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     // Toast State
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -86,6 +90,18 @@ export default function POSScreen() {
         return products.filter(p => p.category === activeCategory);
     }, [products, activeCategory]);
 
+    const handleAddToCart = (product: Product, attributes?: ProductAttributes) => {
+        if (product.attributes && Object.keys(product.attributes).length > 0 && !attributes) {
+            setSelectedProduct(product);
+            setIsAttributeModalVisible(true);
+        } else {
+            addToCart({ ...product, attributes });
+            showToast(t('product_added', { productName: product.name }), 'success');
+            setIsAttributeModalVisible(false);
+            setSelectedProduct(null);
+        }
+    };
+
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
     };
@@ -94,14 +110,13 @@ export default function POSScreen() {
         const product = products.find(p => p.barcode === scannedCode);
 
         if (product) {
-            addToCart(product);
-            showToast(t('product_added', { productName: product.name }), 'success');
+            handleAddToCart(product);
         } else {
             showToast(t('product_not_found'), 'error');
         }
     };
 
-    const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
+    const CATEGORIES: ProductCategory[] = ['Food', 'Drinks', 'Snacks', 'Electronics', 'Fashion', 'Pharmacy', 'Grocery', 'Other'];
 
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
@@ -283,7 +298,7 @@ export default function POSScreen() {
                 renderItem={({item}) => (
                     <ProductCard
                         product={item}
-                        onAdd={() => addToCart(item)}
+                        onAdd={() => handleAddToCart(item)}
                         onRemove={() => decreaseQuantity(item.id)}
                         quantity={getItemQuantity(item.id)
                         }/>
@@ -295,6 +310,15 @@ export default function POSScreen() {
                     </View>
                 }
             />
+
+            {selectedProduct && (
+                <AttributeSelectionModal
+                    visible={isAttributeModalVisible}
+                    product={selectedProduct}
+                    onClose={() => setIsAttributeModalVisible(false)}
+                    onSelect={(attributes) => handleAddToCart(selectedProduct, attributes)}
+                />
+            )}
 
             {/* Floating Bottom Cart Bar */}
             {cart.length > 0 && (
