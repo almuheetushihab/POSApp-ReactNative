@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Order, OrderStatus, RefundDetails, ExchangeDetails } from '../types/order';
+import { Order, OrderStatus, RefundDetails, ExchangeDetails, ReturnDetails } from '../types/order';
 
 interface OrderState {
     orders: Order[];
@@ -59,14 +59,14 @@ export const useOrderStore = create<OrderState>()(
                  set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
+                            const returnDetails: ReturnDetails = {
+                                returnDate: new Date().toISOString(),
+                                reason: returnReason,
+                            };
                             return {
                                 ...order,
                                 status: 'RETURNED' as OrderStatus,
-                                refundDetails: {
-                                    refundDate: new Date().toISOString(),
-                                    refundedAmount: order.totalAmount, // Assuming full return
-                                    reason: returnReason,
-                                },
+                                returnDetails: returnDetails,
                             };
                         }
                         return order;

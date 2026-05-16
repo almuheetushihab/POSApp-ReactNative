@@ -34,6 +34,12 @@ export interface RefundDetails {
     refundedItems?: { productId: string; quantity: number }[];
 }
 
+export interface ReturnDetails {
+    returnDate: string;
+    reason?: string;
+    returnedItems?: { productId: string; quantity: number }[];
+}
+
 export interface ExchangeDetails {
     exchangeDate: string;
     reason?: string;
@@ -90,4 +96,5 @@ export interface Order {
     status: OrderStatus;
     refundDetails?: RefundDetails;
     exchangeDetails?: ExchangeDetails;
+    returnDetails?: ReturnDetails;
 }

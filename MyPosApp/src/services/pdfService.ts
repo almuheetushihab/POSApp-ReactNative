@@ -83,13 +83,57 @@ export const pdfService = {
         // Determine SubTotal
         const subTotalVal = order.subTotal || (order.totalAmount + (order.discount?.amountCalculated || 0) - (order.tax && !order.tax.isInclusive ? order.tax.taxAmount : 0));
 
+        // Generate Status Watermark and Info Box
+        let statusWatermark = '';
+        let statusInfoBox = '';
+        if (order.status !== 'COMPLETED') {
+            statusWatermark = `<div class="watermark">${order.status}</div>`;
+            
+            let reason = 'Not provided';
+            let date = '';
+            if (order.status === 'REFUNDED' && order.refundDetails) {
+                reason = order.refundDetails.reason || 'Not provided';
+                date = new Date(order.refundDetails.refundDate).toLocaleString();
+            } else if (order.status === 'EXCHANGED' && order.exchangeDetails) {
+                reason = order.exchangeDetails.reason || 'Not provided';
+                date = new Date(order.exchangeDetails.exchangeDate).toLocaleString();
+            } else if (order.status === 'RETURNED' && order.returnDetails) {
+                reason = order.returnDetails.reason || 'Not provided';
+                date = new Date(order.returnDetails.returnDate).toLocaleString();
+            }
+
+            statusInfoBox = `
+                <div class="status-box">
+                    <p><strong>Status:</strong> ${order.status}</p>
+                    ${date ? `<p><strong>Date:</strong> ${date}</p>` : ''}
+                    <p><strong>Reason:</strong> ${reason}</p>
+                </div>
+            `;
+        }
+
         return `
           <html>
           
             <head>
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
               <style>
-                body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
+                body { 
+                    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+                    padding: 20px; 
+                    color: #333; 
+                    position: relative;
+                }
+                .watermark {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%) rotate(-45deg);
+                    font-size: 80px;
+                    color: rgba(255, 0, 0, 0.1);
+                    font-weight: bold;
+                    z-index: -1;
+                    text-transform: uppercase;
+                }
                 .header { text-align: center; margin-bottom: 20px; }
                 .header h1 { margin: 0; font-size: 24px; font-weight: bold; color: #2563eb; }
                 .header p { margin: 2px 0; font-size: 12px; color: #666; }
@@ -109,15 +153,28 @@ export const pdfService = {
                 
                 .payment-section { margin-top: 20px; background-color: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
                 
+                .status-box {
+                    margin-top: 20px;
+                    padding: 10px;
+                    border: 2px solid #e11d48;
+                    background-color: #fff5f5;
+                    border-radius: 8px;
+                    color: #c53030;
+                }
+                .status-box p { margin: 2px 0; font-size: 12px; }
+
                 .footer { text-align: center; margin-top: 40px; font-size: 10px; color: #aaa; }
               </style>
             </head>
             <body>
+              ${statusWatermark}
               <div class="header">
                 <h1>${shopInfo.name}</h1>
                 <p>${shopInfo.address}</p>
                 <p>${shopInfo.phone}</p>
               </div>
+
+              ${statusInfoBox}
 
               <div class="invoice-details">
                 <p><span>Order ID:</span> <span style="font-weight: bold;">#${order.id.slice(-6).toUpperCase()}</span></p>
