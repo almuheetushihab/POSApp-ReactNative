@@ -1,11 +1,12 @@
 import { useSyncQueueStore } from '../store/useSyncQueueStore';
 import { useNetworkStore } from '../store/useNetworkStore';
-import { useOrderStore } from '../store/useOrderStore';
-import { useProductStore } from '../store/useProductStore';
-import { useCustomerStore } from '../store/useCustomerStore';
+
+interface ApiResponse {
+    success: boolean;
+}
 
 // This is a mock API call. Replace with your actual API endpoint.
-const fakeApiCall = (actionType: string, payload: any) => {
+const fakeApiCall = (actionType: string, payload: any): Promise<ApiResponse> => {
     console.log(`[SyncService] Syncing action: ${actionType}`, payload);
     return new Promise(resolve => setTimeout(() => resolve({ success: true }), 1000));
 };
@@ -18,16 +19,13 @@ export const SyncService = {
             SyncService.processQueue();
         }
 
-        // Subscribe to network changes
-        useNetworkStore.subscribe(
-            (state) => state.isOnline,
-            (isOnline) => {
-                if (isOnline) {
-                    console.log('[SyncService] Internet connection restored. Processing queue...');
-                    SyncService.processQueue();
-                }
+        // Subscribe to network changes correctly
+        useNetworkStore.subscribe((state, prevState) => {
+            if (state.isOnline && !prevState.isOnline) {
+                console.log('[SyncService] Internet connection restored. Processing queue...');
+                SyncService.processQueue();
             }
-        );
+        });
     },
 
     processQueue: async () => {
@@ -41,17 +39,16 @@ export const SyncService = {
         for (const action of queue) {
             try {
                 const response = await fakeApiCall(action.type, action.payload);
+
                 if (response.success) {
                     removeFomQueue(action.id);
-                    console.log(`[SyncService] Action ${action.id} synced successfully.`);
+                    console.log(`[SyncService] Action ${action.id} (${action.type}) synced successfully.`);
                 } else {
                     console.warn(`[SyncService] Failed to sync action ${action.id}. Will retry later.`);
-                    // If the API fails, we stop processing to maintain order.
                     break; 
                 }
             } catch (error) {
                 console.error(`[SyncService] Error processing action ${action.id}:`, error);
-                // Stop processing on error to avoid data inconsistency
                 break;
             }
         }
