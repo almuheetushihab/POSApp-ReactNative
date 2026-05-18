@@ -1,108 +1,126 @@
-# 🛒 MyPOS - Professional Point of Sale App
+# MyPosAjapp - Professional Point of Sale (POS) System
 
-MyPOS is a modern, fast, and feature-rich Point of Sale (POS) application built with React Native (Expo) for Android, iOS, and Web. It is designed to run efficiently even in completely offline environments, making it a perfect solution for small to medium-sized retail shops, cafes, and mobile businesses.
+MyPosApp is a comprehensive, feature-rich Point of Sale (POS) system built with React Native and Expo. It is designed to be versatile and support various business types, including electronics, fashion, pharmacies, and grocery stores, through a dynamic product attribute system.
 
-## 🚀 Key Features
+## ✨ Key Features
 
-### 1. 🔐 Role-Based Access Control (RBAC) & Security
-* **Multiple Roles:** Supports Admin, Manager, and Cashier roles.
-* **Access Permissions:** 
-    * **Admin:** Full access (View analytics, manage products, change settings, clear history, process full refunds).
-    * **Manager:** Can view analytics and products, process refunds, but cannot clear sales history or access settings.
-    * **Cashier:** Can only access the POS sales terminal and view history (No delete/refund/analytics).
-* **PIN Authentication:** Fast and secure 4-digit PIN login mechanism.
+- **Core POS Functionality:**
+    - **New Sale Processing:** Efficiently handle new sales transactions.
+    - **Dynamic Product Attributes:** Manage products with category-specific attributes (e.g., Serial Numbers, Warranty for Electronics; Size, Color for Fashion; Expiry Date, Batch Number for Pharmacy; Weight, Brand for Grocery).
+    - **Cart Management:** Add/remove items, adjust quantities, and manage product attributes within the cart.
+    - **Customer Management:** Add customer details (name, phone) to orders, with search and selection functionality.
+    - **Discount & Tax Application:** Apply fixed or percentage-based discounts and configure inclusive/exclusive tax/VAT settings.
+    - **Payment Processing:** Support for various payment methods (Cash, Card, MFS, Split Payment) with detailed transaction recording.
 
-### 2. ⚡ Advanced POS Terminal
-* **Smart Search:** Search products by Name, SKU, or Barcode.
-* **Barcode Scanner:** Built-in camera scanner to quickly add items to the cart.
-* **Category Filtering:** Quickly filter products by predefined categories (Food, Drinks, Snacks, etc.).
-* **Real-time Cart Management:** Instantly update quantities, calculate subtotals, and remove items.
+- **Inventory Management:**
+    - **Product Listing & Search:** View, search, and filter products by category.
+    - **Add/Edit/Delete Products:** Full CRUD operations for product management, including dynamic attribute input.
+    - **Real-time Stock Tracking:** Inventory updates automatically with sales, returns, and exchanges.
+    - **Supplier Management:** Track and manage supplier information.
+    - **Purchase Order System:** Create and manage purchase orders for inventory restocking.
 
-### 3. 💳 Flexible Payment Processing
-* **Multiple Payment Methods:** Support for Cash, Card, and Mobile Financial Services (MFS - e.g., bKash, Nagad).
-* **Split Payments:** Customers can pay partially in Cash, Card, and MFS within a single order.
-* **Dynamic Validation:** Requires exact total match for split payments, 4-digit verification for cards, and 11-digit verification for MFS.
-* **Change Calculator:** Auto-calculates return change if the received cash is higher than the total due.
+- **Order & Transaction History:**
+    - **Sales History:** View a comprehensive list of all past orders.
+    - **Order Status Tracking:** Clearly see order statuses (Completed, Refunded, Returned, Partial Return, Exchanged).
+    - **Return & Exchange Management:**
+        - **Partial Returns:** Process returns for specific items or quantities within an order.
+        - **Inventory Restoration:** Automatically restore stock for returned items.
+        - **Exchange Workflow:** Handle product exchanges, including price difference calculation and payment adjustments.
+        - **Refund Processing:** Full refund functionality with inventory adjustments.
 
-### 4. 🧮 Dynamic Discounts & Tax Engine
-* **Smart Discounts:** Apply Fixed Amount (৳) or Percentage (%) discounts per order.
-* **VAT/Tax Engine:** Configurable tax rates (e.g., 5%, 15%).
-* **Tax Types:** Support for both **Inclusive Tax** (tax is inside the product price) and **Exclusive Tax** (tax is added on top of the subtotal).
+- **Reporting & Analytics:**
+    - **Sales & Profit Reports:** Generate detailed reports on total revenue, total orders, average order value, and profit margins.
+    - **Top Selling Products:** Identify best-performing products.
+    - **Time-based Filtering:** View reports for Today, This Week, or This Month.
 
-### 5. 🔁 Refund, Return & Exchange System
-* **Full Refunds:** Admins/Managers can fully refund an order, immediately reflecting on daily sales reports.
-* **Returns:** Log returned items with customizable reasons (e.g., "Defective item").
-* **Exchanges:** Process product exchanges by calculating the price difference (whether the customer owes money or the shop needs to return change).
+- **User & Security Management:**
+    - **Role-Based Access Control (RBAC):** Restrict access to certain features (e.g., analytics, settings) based on user roles (Admin, Manager, Cashier).
+    - **Secure Logout:** Ensure secure session termination.
 
-### 6. 📊 Dashboard & Analytics
-* **Real-time Metrics:** View Today's Sales, Total Orders, and Product Count.
-* **Sales Charts:** Visual representation of sales data using Native Chart Kits.
-* **Quick Actions:** Fast navigation to POS, Products, History, and Settings.
+- **Data Management & Backup:**
+    - **Local Data Storage:** Utilizes AsyncStorage for robust local data persistence.
+    - **Backup & Restore:** Functionality to backup and restore application data.
 
-### 7. 🧾 Receipt Generation & Printing
-* **PDF Invoices:** Generates beautiful, professional PDF receipts for every sale.
-* **Customizable Footer:** Shop name, address, phone, and footer messages are configurable via Settings.
-* **Detailed Breakdown:** Receipts show exact split payment methods (e.g., Card ending in **4242), discounts, and tax breakdowns.
-* **Print/Share:** Send receipts directly to a Thermal Printer or share via WhatsApp/Email.
+- **User Interface & Experience:**
+    - **Modern & Intuitive Design:** Clean and user-friendly interface.
+    - **Multi-language Support:** Fully localized for English (en) and Bengali (bn) using i18next, with dynamic language switching.
+    - **Light & Dark Mode:** Seamless switching between light and dark themes for optimal viewing comfort.
+    - **Toast Notifications:** Provide clear feedback for user actions.
+    - **Network Status Detection:** Inform users about their online/offline status.
 
-### 8. 🌐 Multi-Language & Theming
-* **i18n Support:** Fully translated in English and Bengali (বাংলা).
-* **Dark Mode:** System-wide Light and Dark mode with a seamless toggle switch.
+- **Hardware & External Integration:**
+    - **Receipt Printing:** Generate and print professional sales receipts with detailed order information, including attributes and status.
+    - **Barcode Scanning:** Quickly add products to the cart using the device camera.
+
+## 🚀 Tech Stack
+
+- **Framework:** React Native with Expo (SDK 51)
+- **Routing:** Expo Router
+- **Language:** TypeScript
+- **State Management:** Zustand
+- **Styling:** NativeWind (Tailwind CSS)
+- **Localization:** i18next, intl-pluralrules
+- **Data Persistence:** AsyncStorage
+- **PDF Generation:** Expo Print
+- **Network Info:** @react-native-community/netinfo
+
+## 🏁 Getting Started
+
+### Prerequisites
+
+- Node.js (LTS version recommended)
+- npm or yarn
+- An Android Emulator or a physical Android device
+- Android Studio (for setting up JDK and emulators)
+
+### Installation & Running
+
+1.  **Navigate to the project directory:**
+    ```sh
+    cd MyPosApp
+    ```
+
+2.  **Install dependencies:**
+    ```sh
+    npm install
+    ```
+
+3.  **Set JAVA_HOME environment variable:**
+    Ensure your `JAVA_HOME` environment variable is set to your JDK installation path (e.g., `C:\Program Files\Android\Android Studio\jbr`). Restart your terminal after setting.
+
+4.  **Run the application:**
+    ```sh
+    npx expo start
+    ```
+    This will start the Metro bundler. You can then run the app on an Android emulator or your physical device using the Expo Go app.
+
+### Building an APK for Android
+
+To create a standalone APK file for distribution or direct installation:
+
+1.  **Install EAS CLI globally:**
+    ```sh
+    npm install -g eas-cli
+    ```
+
+2.  **Log in to your Expo account:**
+    ```sh
+    eas login
+    ```
+    Follow the browser prompts to log in.
+
+3.  **Configure EAS Build (if not already configured):**
+    ```sh
+    eas build:configure
+    ```
+    Ensure your `eas.json` includes `"buildType": "apk"` under the `production` profile for Android.
+
+4.  **Start the APK build process:**
+    ```sh
+    eas build --platform android --profile production
+    ```
+    When prompted to generate a new Android Keystore, choose "Yes" and let EAS handle it. The build will run in the cloud, and you will receive a link to download your APK once completed.
 
 ---
 
-## 🛠️ Technology Stack
-
-* **Framework:** React Native & Expo Router (File-based routing)
-* **Styling:** NativeWind (Tailwind CSS for React Native)
-* **State Management:** Zustand (Fast, scalable, and immutable)
-* **Local Storage:** AsyncStorage (Offline-first architecture)
-* **Icons:** Expo Vector Icons (Ionicons)
-* **PDF & Printing:** `expo-print` and `expo-sharing`
-* **Localization:** `react-i18next`
-
-### Why these technologies?
-* **Zustand + AsyncStorage:** Used instead of Redux/Context for much faster read/write times without complex boilerplate. It enables the app to run completely offline.
-* **NativeWind:** Provides consistent UI design across all devices while significantly reducing stylesheet size.
-* **Expo Router:** Makes deep-linking and screen navigation much more intuitive and maintainable.
-
----
-
-## 🧪 Demo Accounts
-
-To test the application, use the following PIN codes at the login screen:
-* **Admin:** `0000` (Full Access)
-* **Manager:** `1234` (Cannot clear history or access settings)
-* **Cashier:** `1111` (Can only access POS terminal and view history)
-
----
-
-## 🔮 Future Roadmap (Upcoming Features)
-
-1. **Inventory & Stock Management Module**
-   * Low stock alerts and threshold configurations.
-   * Supplier management and purchase order tracking.
-2. **Cloud Synchronization & Backend DB**
-   * Sync offline data with Firebase/Supabase when the internet is restored.
-   * Multi-device synchronization for larger stores with multiple cashiers.
-3. **Advanced Customer CRM**
-   * Customer loyalty points and rewards system.
-   * Purchase history per specific customer.
-4. **Employee Management**
-   * Shift tracking (Clock-in / Clock-out).
-   * Cash drawer reconciliation at the end of shifts.
-5. **Hardware Integrations**
-   * Direct ESC/POS Bluetooth thermal printer integration (without PDF).
-   * Cash drawer trigger via RJ11 interface.
-6. **Multi-Store Architecture**
-   * Manage multiple branches from a single Admin dashboard.
-
----
-
-## 👨‍💻 Installation & Running Locally
-
-1. Clone the repository.
-2. Navigate to the project folder (`cd POSApp-ReactNative/MyPosApp`).
-3. Install dependencies: `npm install`
-4. Start the Expo server: `npx expo start`
-5. Press `a` to open in Android Emulator, `i` for iOS Simulator, or scan the QR code with your physical device using the Expo Go app.
+This project is continuously being enhanced to provide a robust and flexible POS solution for various business needs.
