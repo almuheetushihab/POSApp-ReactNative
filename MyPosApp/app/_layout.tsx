@@ -6,6 +6,7 @@ import { useColorScheme } from "nativewind";
 import { useAppStore } from "../src/store/useAppStore";
 import NetInfo from "@react-native-community/netinfo";
 import { useNetworkStore } from "../src/store/useNetworkStore";
+import { SyncService } from "../src/services/SyncService";
 
 export default function RootLayout() {
     const { theme } = useAppStore();
@@ -16,15 +17,17 @@ export default function RootLayout() {
         setColorScheme(theme);
     }, [theme]);
 
-    // Subscribe to network state changes
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
             const isOnline = state.isConnected != null && state.isConnected && state.isInternetReachable != null && state.isInternetReachable;
             setIsOnline(isOnline);
         });
 
+        // Initialize the Sync Service
+        SyncService.init();
+
         return () => {
-            unsubscribe(); // Cleanup on unmount
+            unsubscribe();
         };
     }, []);
 
