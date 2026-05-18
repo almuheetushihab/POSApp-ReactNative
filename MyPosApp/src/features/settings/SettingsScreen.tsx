@@ -17,7 +17,7 @@ export default function SettingsScreen() {
 
     const {theme, setTheme, language, setLanguage} = useAppStore();
     const {shopInfo, updateShopInfo, taxSettings, updateTaxSettings} = useSettingsStore();
-    const {logout} = useAuthStore();
+    const {user, logout} = useAuthStore();
 
     const [formData, setFormData] = useState(shopInfo);
     const [taxData, setTaxData] = useState<TaxSettings>(taxSettings);
@@ -173,6 +173,21 @@ export default function SettingsScreen() {
                         <Text className="text-white font-bold text-base">{t('save_shop_info')}</Text>
                     </Pressable>
                 </View>
+
+                {user?.role === 'Admin' && (
+                    <>
+                        <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
+                            Admin
+                        </Text>
+                        <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
+                            <SettingsLink 
+                                icon="shield-outline" 
+                                label="Audit Log" 
+                                onPress={() => router.push('/audit-log')} 
+                            />
+                        </View>
+                    </>
+                )}
 
                 {/* Data Management Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
