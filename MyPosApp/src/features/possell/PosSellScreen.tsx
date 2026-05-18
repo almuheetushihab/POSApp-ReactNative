@@ -13,7 +13,7 @@ import {ScannerModal} from "../../components/ScannerModal";
 import {PaymentProcessingModal} from "../../components/PaymentProcessingModal";
 import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
-import { Product } from "../../types/product";
+import { Product, ProductCategory } from "../../types/product";
 import { AttributeSelectionModal } from "../../components/AttributeSelectionModal";
 
 // Simple Toast Component
@@ -59,7 +59,7 @@ export default function POSScreen() {
     const {taxSettings} = useSettingsStore();
     const {customers, addCustomer} = useCustomerStore();
 
-    const [activeCategory, setActiveCategory] = useState<ProductCategory>('Other');
+    const [activeCategory, setActiveCategory] = useState<ProductCategory | 'All'>('All');
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
@@ -116,7 +116,7 @@ export default function POSScreen() {
         }
     };
 
-    const CATEGORIES: ProductCategory[] = ['Food', 'Drinks', 'Snacks', 'Electronics', 'Fashion', 'Pharmacy', 'Grocery', 'Other'];
+    const CATEGORIES: (ProductCategory | 'All')[] = ['All', 'Food', 'Drinks', 'Snacks', 'Electronics', 'Fashion', 'Pharmacy', 'Grocery', 'Other'];
 
     const getItemQuantity = (productId: string) => {
         const item = cart.find(i => i.id === productId);
