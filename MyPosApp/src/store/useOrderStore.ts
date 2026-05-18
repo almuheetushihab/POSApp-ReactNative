@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Order, OrderStatus, RefundDetails, ExchangeDetails, ReturnDetails } from '../types/order';
 import { useSyncQueueStore } from './useSyncQueueStore';
 import { useNetworkStore } from './useNetworkStore';
+import { useAuditLogStore } from './useAuditLogStore';
 
 interface OrderState {
     orders: Order[];
@@ -49,9 +50,11 @@ export const useOrderStore = create<OrderState>()(
             },
 
             processRefund: (orderId, refundDetails, isPartial = false) => {
+                const { addLog } = useAuditLogStore.getState();
                 set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
+                            addLog('PROCESS_REFUND', `Processed refund for order ${orderId}`, orderId);
                             return {
                                 ...order,
                                 status: (isPartial ? 'PARTIAL_RETURN' : 'REFUNDED') as OrderStatus,
@@ -69,9 +72,11 @@ export const useOrderStore = create<OrderState>()(
             },
 
             processReturn: (orderId, returnReason = 'Customer returned items') => {
+                const { addLog } = useAuditLogStore.getState();
                  set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
+                            addLog('PROCESS_RETURN', `Processed return for order ${orderId}`, orderId);
                             const returnDetails: ReturnDetails = {
                                 returnDate: new Date().toISOString(),
                                 reason: returnReason,
@@ -90,9 +95,11 @@ export const useOrderStore = create<OrderState>()(
             },
 
             processExchange: (orderId, exchangeDetails) => {
+                const { addLog } = useAuditLogStore.getState();
                 set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
+                            addLog('PROCESS_EXCHANGE', `Processed exchange for order ${orderId}`, orderId);
                             const newTotal = order.totalAmount + exchangeDetails.priceDifference;
                             
                             return {

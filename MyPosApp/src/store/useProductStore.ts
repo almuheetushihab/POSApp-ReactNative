@@ -5,6 +5,7 @@ import { Product } from '../types/product';
 import { productService } from '../services/productService';
 import { useSyncQueueStore } from './useSyncQueueStore';
 import { useNetworkStore } from './useNetworkStore';
+import { useAuditLogStore } from './useAuditLogStore';
 
 interface ProductState {
     // States
@@ -62,11 +63,14 @@ export const useProductStore = create<ProductState>()(
             addProduct: (newProduct) => {
                 const { isOnline } = useNetworkStore.getState();
                 const { addToQueue } = useSyncQueueStore.getState();
+                const { addLog } = useAuditLogStore.getState();
 
                 set((state) => ({
                     products: [newProduct, ...state.products],
                     searchQuery: ''
                 }));
+
+                addLog('CREATE_PRODUCT', `Created product: ${newProduct.name}`, newProduct.id);
 
                 if (!isOnline) {
                     addToQueue('CREATE_PRODUCT', newProduct);
@@ -76,6 +80,8 @@ export const useProductStore = create<ProductState>()(
             updateProduct: (updatedProduct) => {
                 const { isOnline } = useNetworkStore.getState();
                 const { addToQueue } = useSyncQueueStore.getState();
+                const { addLog } = useAuditLogStore.getState();
+                const oldProduct = get().products.find(p => p.id === updatedProduct.id);
 
                 set((state) => {
                     const newProducts = state.products.map((p) =>
@@ -84,16 +90,24 @@ export const useProductStore = create<ProductState>()(
                     return { products: newProducts };
                 });
 
+                addLog('UPDATE_PRODUCT', `Updated product: ${updatedProduct.name}`, updatedProduct.id);
+
                 if (!isOnline) {
                     addToQueue('UPDATE_PRODUCT', updatedProduct);
                 }
             },
 
             deleteProduct: (productId) => {
+                const { addLog } = useAuditLogStore.getState();
+                const productToDelete = get().products.find(p => p.id === productId);
+
                 set((state) => ({
                     products: state.products.filter((p) => p.id !== productId)
                 }));
-                // Note: Offline deletion can be complex. For now, we assume it's an admin-only, online action.
+                
+                if (productToDelete) {
+                    addLog('DELETE_PRODUCT', `Deleted product: ${productToDelete.name}`, productId);
+                }
             },
 
             reduceStock: (cartItems) => {
