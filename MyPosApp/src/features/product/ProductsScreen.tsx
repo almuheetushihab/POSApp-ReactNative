@@ -18,22 +18,22 @@ import {useRouter} from "expo-router";
 import {ProductCard} from "../../components/ProductCard";
 import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
-import {Product} from "../../types/product";
+import {Product, ProductCategory} from "../../types/product";
 import {AddProductModal} from "../../components/AddProductModal";
 
-const CATEGORIES = ['All', 'Food', 'Drinks', 'Snacks'];
+const CATEGORIES: ProductCategory[] = ['All', 'Food', 'Drinks', 'Snacks', 'Electronics', 'Fashion', 'Pharmacy', 'Grocery', 'Other'];
 
 export default function ProductsScreen() {
     const router = useRouter();
     const {t} = useTranslation();
     const [isCartVisible, setIsCartVisible] = useState(false);
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [activeCategory, setActiveCategory] = useState<ProductCategory>('All');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const {
         products,
         isLoading,
         fetchProducts,
-        searchProducts,
     } = useProductStore();
 
     const {
@@ -52,11 +52,23 @@ export default function ProductsScreen() {
 
     const filteredProducts = useMemo(() => {
         let result = products;
+
         if (activeCategory !== 'All') {
             result = result.filter(p => p.category === activeCategory);
         }
+
+        if (searchQuery) {
+            const lowercasedQuery = searchQuery.toLowerCase();
+            result = result.filter(
+                (p) =>
+                    p.name.toLowerCase().includes(lowercasedQuery) ||
+                    p.barcode?.includes(lowercasedQuery) ||
+                    p.sku?.toLowerCase().includes(lowercasedQuery)
+            );
+        }
+        
         return result;
-    }, [products, activeCategory]);
+    }, [products, activeCategory, searchQuery]);
 
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
     const getItemQuantity = (productId: string) => {
@@ -97,7 +109,8 @@ export default function ProductsScreen() {
                         className="flex-1 ml-3 text-slate-800 dark:text-white font-medium"
                         placeholder={t('search_placeholder')}
                         placeholderTextColor="#94a3b8"
-                        onChangeText={searchProducts}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                     />
                 </View>
             </View>

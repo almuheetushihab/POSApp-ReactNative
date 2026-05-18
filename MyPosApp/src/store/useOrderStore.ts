@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Order, OrderStatus, RefundDetails, ExchangeDetails, ReturnDetails } from '../types/order';
+import { useSyncQueueStore } from './useSyncQueueStore';
+import { useNetworkStore } from './useNetworkStore';
 
 interface OrderState {
     orders: Order[];
     
     // Actions
-    setOrders: (orders: Order[]) => void; // New action for restoring
+    setOrders: (orders: Order[]) => void;
     addOrder: (order: Order) => void;
     processRefund: (orderId: string, refundDetails: RefundDetails, isPartial?: boolean) => void;
     processReturn: (orderId: string, returnReason?: string) => void;
@@ -28,11 +30,22 @@ export const useOrderStore = create<OrderState>()(
             setOrders: (orders) => set({ orders }),
 
             addOrder: (order) => {
+                const { isOnline } = useNetworkStore.getState();
+                const { addToQueue } = useSyncQueueStore.getState();
+
                 const newOrder: Order = {
                     ...order,
                     status: order.status || 'COMPLETED',
                 };
+
                 set((state) => ({ orders: [newOrder, ...state.orders] }));
+
+                if (!isOnline) {
+                    addToQueue('CREATE_ORDER', newOrder);
+                    console.log('[useOrderStore] Offline: Order added to sync queue.');
+                } else {
+                    console.log('[useOrderStore] Online: Order processed (simulation).');
+                }
             },
 
             processRefund: (orderId, refundDetails, isPartial = false) => {
@@ -80,9 +93,6 @@ export const useOrderStore = create<OrderState>()(
                 set((state) => {
                     const updatedOrders = state.orders.map((order) => {
                         if (order.id === orderId) {
-                            // Calculate the new total amount based on the price difference
-                            // If positive, customer paid more (increase total)
-                            // If negative, shop returned money (decrease total)
                             const newTotal = order.totalAmount + exchangeDetails.priceDifference;
                             
                             return {
@@ -107,8 +117,6 @@ export const useOrderStore = create<OrderState>()(
                 return get().orders
                     .filter((o) => {
                         const isToday = new Date(o.date).toDateString() === today;
-                        // Exclude fully refunded/returned orders from today's active sales if needed
-                        // Allow COMPLETED and EXCHANGED (since exchanged updates total)
                         return isToday && (o.status === 'COMPLETED' || o.status === 'EXCHANGED');
                     })
                     .reduce((sum, order) => sum + order.totalAmount, 0);

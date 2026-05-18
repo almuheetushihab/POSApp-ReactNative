@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Product } from '../types/product';
 import { productService } from '../services/productService';
+import { useSyncQueueStore } from './useSyncQueueStore';
+import { useNetworkStore } from './useNetworkStore';
 
 interface ProductState {
     // States
@@ -58,30 +60,40 @@ export const useProductStore = create<ProductState>()(
             },
 
             addProduct: (newProduct) => {
-                set((state) => {
-                    const updatedList = [newProduct, ...state.products];
-                    return {
-                        products: updatedList,
-                        searchQuery: ''
-                    };
-                });
+                const { isOnline } = useNetworkStore.getState();
+                const { addToQueue } = useSyncQueueStore.getState();
+
+                set((state) => ({
+                    products: [newProduct, ...state.products],
+                    searchQuery: ''
+                }));
+
+                if (!isOnline) {
+                    addToQueue('CREATE_PRODUCT', newProduct);
+                }
             },
 
             updateProduct: (updatedProduct) => {
+                const { isOnline } = useNetworkStore.getState();
+                const { addToQueue } = useSyncQueueStore.getState();
+
                 set((state) => {
                     const newProducts = state.products.map((p) =>
                         p.id === updatedProduct.id ? updatedProduct : p
                     );
-
                     return { products: newProducts };
                 });
+
+                if (!isOnline) {
+                    addToQueue('UPDATE_PRODUCT', updatedProduct);
+                }
             },
 
             deleteProduct: (productId) => {
-                set((state) => {
-                    const newProducts = state.products.filter((p) => p.id !== productId);
-                    return { products: newProducts };
-                });
+                set((state) => ({
+                    products: state.products.filter((p) => p.id !== productId)
+                }));
+                // Note: Offline deletion can be complex. For now, we assume it's an admin-only, online action.
             },
 
             reduceStock: (cartItems) => {
@@ -93,10 +105,7 @@ export const useProductStore = create<ProductState>()(
                         }
                         return product;
                     });
-
-                    return {
-                        products: newProducts,
-                    };
+                    return { products: newProducts };
                 });
             },
 
@@ -109,10 +118,7 @@ export const useProductStore = create<ProductState>()(
                         }
                         return product;
                     });
-
-                    return {
-                        products: newProducts,
-                    };
+                    return { products: newProducts };
                 });
             },
         }),
