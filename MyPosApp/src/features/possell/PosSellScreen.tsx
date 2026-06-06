@@ -15,6 +15,7 @@ import {useSettingsStore} from "../../store/useSettingsStore";
 import {useCustomerStore} from "../../store/useCustomerStore";
 import { Product, ProductCategory } from "../../types/product";
 import { AttributeSelectionModal } from "../../components/AttributeSelectionModal";
+import { PaymentModal } from "../../components/PaymentModal";
 
 // Simple Toast Component
 const Toast = ({ message, type, onHide }: { message: string, type: 'success' | 'error', onHide: () => void }) => {
@@ -63,6 +64,7 @@ export default function POSScreen() {
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [isScannerVisible, setIsScannerVisible] = useState(false);
     const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+    const [isCardPaymentModalVisible, setIsCardPaymentModalVisible] = useState(false);
     const [isAttributeModalVisible, setIsAttributeModalVisible] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -180,6 +182,17 @@ export default function POSScreen() {
     const filteredCustomers = customers.filter(
         c => c.phone.includes(searchQuery) || c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const handleCardPayment = () => {
+        setIsPaymentModalVisible(false); 
+        setIsCardPaymentModalVisible(true); 
+    };
+
+    const onCardPaymentSuccess = () => {
+        setIsCardPaymentModalVisible(false);
+        // FIX: changed 'Card' to 'CARD' to match PaymentMethod type
+        finalizeOrder('CARD', { cardDetails: { cardType: 'OTHER', transactionId: 'Stripe_Txn' } });
+    };
 
     const finalizeOrder = (
         method: PaymentMethod,
@@ -565,8 +578,24 @@ export default function POSScreen() {
                 visible={isPaymentModalVisible}
                 totalAmount={finalTotal}
                 onClose={() => setIsPaymentModalVisible(false)}
-                onConfirm={finalizeOrder}
+                onConfirm={(method, details) => {
+                    // FIX: Checking against 'CARD' instead of 'Card' to match PaymentMethod type
+                    if (method === 'CARD') {
+                        handleCardPayment();
+                    } else {
+                        finalizeOrder(method, details);
+                    }
+                }}
             />
+
+            {isCardPaymentModalVisible && (
+                <PaymentModal
+                    visible={isCardPaymentModalVisible}
+                    onClose={() => setIsCardPaymentModalVisible(false)}
+                    amount={finalTotal}
+                    onPaymentSuccess={onCardPaymentSuccess}
+                />
+            )}
 
             <OrderSuccessModal
                 visible={showSuccessModal}

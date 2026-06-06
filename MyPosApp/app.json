@@ -32,7 +32,14 @@
     "plugins": [
       "expo-font",
       "expo-asset",
-      "expo-localization"
+      "expo-localization",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.almuheetu.MyPosApp",
+          "enableGooglePay": false
+        }
+      ]
     ],
     "extra": {
       "eas": {

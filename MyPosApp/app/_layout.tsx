@@ -7,6 +7,7 @@ import { useAppStore } from "../src/store/useAppStore";
 import NetInfo from "@react-native-community/netinfo";
 import { useNetworkStore } from "../src/store/useNetworkStore";
 import { SyncService } from "../src/services/SyncService";
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 export default function RootLayout() {
     const { theme } = useAppStore();
@@ -32,14 +33,16 @@ export default function RootLayout() {
     }, []);
 
     return (
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="dashboard" />
-            <Stack.Screen
-                name="productdetails"
-                options={{ presentation: 'modal', headerShown: false }}
-            />
-        </Stack>
+        <StripeProvider publishableKey="pk_test_51TfPhkPhMna5WFviWDyoj44zk6BReZB1C7nOKxu0sUX1oQvT7hyIW203qdtIWClsXgLT5z6gq3vehaLhAsdrvAEe00cEyOtvu5">
+            <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="dashboard" />
+                <Stack.Screen
+                    name="productdetails"
+                    options={{ presentation: 'modal', headerShown: false }}
+                />
+            </Stack>
+        </StripeProvider>
     );
 }
