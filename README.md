@@ -77,25 +77,45 @@ To test the application, use the following PIN codes at the login screen:
 
 ---
 
-## 🔮 Future Roadmap (Upcoming Features)
+## 🔮 Future Roadmap & Enterprise Features (Upcoming)
 
-1. **Inventory & Stock Management Module**
-   * Low stock alerts and threshold configurations.
-   * Supplier management and purchase order tracking.
-2. **Cloud Synchronization & Backend DB**
-   * Sync offline data with Firebase/Supabase when the internet is restored.
-   * Multi-device synchronization for larger stores with multiple cashiers.
-3. **Advanced Customer CRM**
-   * Customer loyalty points and rewards system.
-   * Purchase history per specific customer.
-4. **Employee Management**
-   * Shift tracking (Clock-in / Clock-out).
-   * Cash drawer reconciliation at the end of shifts.
-5. **Hardware Integrations**
-   * Direct ESC/POS Bluetooth thermal printer integration (without PDF).
+To elevate MyPOS to an enterprise-grade solution, the following advanced features are on our development roadmap:
+
+1. **📦 Advanced Inventory & Supply Chain Management**
+   * Low stock alerts and custom threshold configurations.
+   * Supplier management, purchase order tracking, and stock transfer between branches.
+   * Batch tracking and expiry date management for perishables.
+2. **☁️ Cloud Synchronization & Centralized Backend**
+   * Seamless offline-to-online sync with Firebase/Supabase when internet is restored.
+   * Multi-device synchronization for larger stores with multiple registers.
+3. **🤝 Advanced Customer CRM & Loyalty Program**
+   * Points-based customer loyalty and rewards system.
+   * Targeted SMS/Email marketing based on purchase history and customer tier.
+   * Store credit and digital gift card management.
+4. **👥 Employee Management & Payroll**
+   * Biometric or secure PIN shift tracking (Clock-in / Clock-out).
+   * Cash drawer reconciliation at the end of shifts with discrepancy reporting.
+   * Commission tracking for sales associates.
+5. **🔌 Enterprise Hardware Integrations**
+   * Direct ESC/POS Bluetooth/Wi-Fi thermal printer integration (without PDF generation).
    * Cash drawer trigger via RJ11 interface.
-6. **Multi-Store Architecture**
-   * Manage multiple branches from a single Admin dashboard.
+   * Weighing scale integration for groceries and bulk items.
+   * Customer Facing Display (CFD) and Self-service Kiosk mode support.
+6. **🏢 Multi-Store Architecture**
+   * Manage multiple branches from a single, unified Cloud Admin dashboard.
+   * Consolidated multi-store reporting and analytics.
+7. **🤖 AI-Powered Analytics & Forecasting**
+   * Predictive sales analysis based on historical data and seasonal trends.
+   * Smart inventory replenishment recommendations to prevent overstocking or stockouts.
+8. **🔗 E-commerce & Third-Party Integrations**
+   * Real-time inventory sync with Shopify, WooCommerce, and Magento.
+   * Delivery platform integrations (e.g., Foodpanda, UberEats) directly into the POS.
+   * Accounting software integration (QuickBooks, Xero).
+9. **📱 Omnichannel Retailing & Digital Receipts**
+   * Automated digital receipts via SMS, WhatsApp, and Email.
+10. **🌍 Multi-Currency & Advanced Taxation**
+    * Real-time exchange rates for multi-currency transactions.
+    * Region-based dynamic tax rules and compliance reporting.
 
 ---
 
