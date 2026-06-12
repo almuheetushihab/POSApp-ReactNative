@@ -1,10 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useOrderStore } from '../../store/useOrderStore';
 import { Order } from '../../types/order';
 import { SalesChart } from '../../components/SalesChart';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 export type TimePeriod = 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH';
 
@@ -55,8 +58,15 @@ const ProductReportRow = ({ rank, name, quantity, revenue }: { rank: number, nam
 export default function ReportScreen() {
     const { orders } = useOrderStore();
     const [timePeriod, setTimePeriod] = useState<TimePeriod>('TODAY');
+    const { user } = useAuthStore();
+    const router = useRouter();
+    const { t } = useTranslation();
+
+    const canViewReports = user?.role === 'Admin' || user?.role === 'Manager';
 
     const reportData = useMemo(() => {
+        if (!canViewReports) return null;
+
         const filtered = filterOrdersByPeriod(orders, timePeriod);
         
         const totalRevenue = filtered.reduce((sum, order) => sum + order.totalAmount, 0);
@@ -106,7 +116,30 @@ export default function ReportScreen() {
             topProducts,
             filteredOrders: filtered,
         };
-    }, [orders, timePeriod]);
+    }, [orders, timePeriod, canViewReports]);
+
+    if (!canViewReports || !reportData) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950 justify-center items-center p-8">
+                <View className="bg-yellow-100 dark:bg-yellow-900/30 p-5 rounded-full mb-6">
+                    <Ionicons name="lock-closed-outline" size={40} color="#f59e0b" />
+                </View>
+                <Text className="text-xl font-bold text-slate-800 dark:text-white text-center mb-2">
+                    {t('access_denied')}
+                </Text>
+                <Text className="text-slate-500 dark:text-slate-400 text-center mb-8">
+                    {t('analytics_hidden_desc')}
+                </Text>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    className="bg-blue-600 px-8 py-3 rounded-full flex-row items-center gap-2"
+                >
+                    <Ionicons name="arrow-back-outline" size={18} color="white" />
+                    <Text className="text-white font-bold">{t('go_back')}</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
