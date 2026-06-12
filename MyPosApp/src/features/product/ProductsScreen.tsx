@@ -20,6 +20,7 @@ import {useProductStore} from "../../store/useProductStore";
 import {useCartStore} from "../../store/useCartStore";
 import {Product, ProductCategory} from "../../types/product";
 import {AddProductModal} from "../../components/AddProductModal";
+import { useAuthStore } from '../../store/useAuthStore';
 
 const CATEGORIES: ProductCategory[] = ['All', 'Food', 'Drinks', 'Snacks', 'Electronics', 'Fashion', 'Pharmacy', 'Grocery', 'Other'];
 
@@ -29,6 +30,7 @@ export default function ProductsScreen() {
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [activeCategory, setActiveCategory] = useState<ProductCategory>('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const { user } = useAuthStore();
 
     const {
         products,
@@ -172,12 +174,14 @@ export default function ProductsScreen() {
                 />
             )}
 
-            <TouchableOpacity
-                onPress={() => setIsAddModalVisible(true)}
-                className="absolute bottom-6 right-6 bg-blue-600 h-14 w-14 rounded-full items-center justify-center shadow-lg shadow-blue-400 z-50"
-            >
-                <Ionicons name="add" size={30} color="white"/>
-            </TouchableOpacity>
+            {(user?.role === 'Admin' || user?.role === 'Manager') && (
+                <TouchableOpacity
+                    onPress={() => setIsAddModalVisible(true)}
+                    className="absolute bottom-6 right-6 bg-blue-600 h-14 w-14 rounded-full items-center justify-center shadow-lg shadow-blue-400 z-50"
+                >
+                    <Ionicons name="add" size={30} color="white"/>
+                </TouchableOpacity>
+            )}
 
             <AddProductModal
                 visible={isAddModalVisible}

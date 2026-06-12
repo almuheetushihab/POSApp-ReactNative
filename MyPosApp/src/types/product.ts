@@ -1,4 +1,4 @@
-export type ProductCategory = 'Food' | 'Drinks' | 'Snacks' | 'Electronics' | 'Fashion' | 'Pharmacy' | 'Grocery' | 'Other';
+export type ProductCategory = 'All' | 'Food' | 'Drinks' | 'Snacks' | 'Electronics' | 'Fashion' | 'Pharmacy' | 'Grocery' | 'Other';
 
 export interface Warranty {
     period: string; // "12 months"

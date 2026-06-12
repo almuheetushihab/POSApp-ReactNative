@@ -5,11 +5,13 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {Ionicons} from '@expo/vector-icons';
 import {useProductStore} from "../../store/useProductStore";
 import {AddProductModal} from "../../components/AddProductModal";
+import { useAuthStore } from '../../store/useAuthStore';
 
 
 export default function ProductDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
+    const { user } = useAuthStore();
 
     const {deleteProduct, products} = useProductStore();
 
@@ -64,23 +66,25 @@ export default function ProductDetailsScreen() {
                         <Ionicons name="arrow-back" size={24} color="#333"/>
                     </TouchableOpacity>
 
-                    <View className="absolute top-4 right-4 flex-row gap-3 z-10">
-                        {/* Edit Button */}
-                        <TouchableOpacity
-                            onPress={() => setIsEditModalVisible(true)}
-                            className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
-                        >
-                            <Ionicons name="create-outline" size={24} color="#2563eb"/>
-                        </TouchableOpacity>
+                    {(user?.role === 'Admin' || user?.role === 'Manager') && (
+                        <View className="absolute top-4 right-4 flex-row gap-3 z-10">
+                            {/* Edit Button */}
+                            <TouchableOpacity
+                                onPress={() => setIsEditModalVisible(true)}
+                                className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
+                            >
+                                <Ionicons name="create-outline" size={24} color="#2563eb"/>
+                            </TouchableOpacity>
 
-                        {/* Delete Button */}
-                        <TouchableOpacity
-                            onPress={handleDelete}
-                            className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
-                        >
-                            <Ionicons name="trash-outline" size={24} color="#ef4444"/>
-                        </TouchableOpacity>
-                    </View>
+                            {/* Delete Button */}
+                            <TouchableOpacity
+                                onPress={handleDelete}
+                                className="bg-white/90 dark:bg-black/50 p-2.5 rounded-full shadow-sm"
+                            >
+                                <Ionicons name="trash-outline" size={24} color="#ef4444"/>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </View>
 
                 {/* Details Body */}
