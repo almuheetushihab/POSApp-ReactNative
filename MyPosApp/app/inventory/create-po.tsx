@@ -1,4 +1,4 @@
-import CreatePurchaseOrderScreen from '../../src/features/inventory/CreatePurchaseOrderScreen';
+import CreatePurchaseOrderScreen from '../../src/screens/inventory/CreatePurchaseOrderScreen';
 
 export default function CreatePurchaseOrderPage() {
     return <CreatePurchaseOrderScreen />;

@@ -189,7 +189,7 @@ export const DashboardScreen = () => {
                     {canManageCustomers ? (
                         <QuickActionButton
                             icon="people" label="Customers"
-                            color="#8b5cf6" onPress={() => router.push('/features/customer')}
+                            color="#8b5cf6" onPress={() => router.push('/screens/customer')}
                         />
                     ) : (
                          <QuickActionButton

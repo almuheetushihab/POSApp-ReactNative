@@ -1,3 +1,3 @@
-import POSScreen from "../../src/features/possell/PosSellScreen";
+import POSScreen from "../../src/screens/possell/PosSellScreen";
 
 export default POSScreen

@@ -1,4 +1,4 @@
-import BranchSelectionScreen from '../src/features/auth/BranchSelectionScreen';
+import BranchSelectionScreen from '../src/screens/auth/BranchSelectionScreen';
 
 export default function BranchSelectionPage() {
     return <BranchSelectionScreen />;

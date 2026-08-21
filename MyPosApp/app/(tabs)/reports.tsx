@@ -1,3 +1,3 @@
-import ReportScreen from "../../src/features/reports/ReportScreen";
+import ReportScreen from "../../src/screens/reports/ReportScreen";
 
 export default ReportScreen;

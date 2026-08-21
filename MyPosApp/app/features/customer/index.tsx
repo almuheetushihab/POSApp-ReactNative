@@ -1,4 +1,4 @@
-import CustomerListScreen from '../../../src/features/customer/CustomerListScreen';
+import CustomerListScreen from '../../../src/screens/customer/CustomerListScreen';
 
 export default function CustomerListRoute() {
     return <CustomerListScreen />;

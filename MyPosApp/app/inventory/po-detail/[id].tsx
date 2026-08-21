@@ -1,4 +1,4 @@
-import PurchaseOrderDetailScreen from '../../../src/features/inventory/PurchaseOrderDetailScreen';
+import PurchaseOrderDetailScreen from '../../../src/screens/inventory/PurchaseOrderDetailScreen';
 
 // This component simply renders the detail screen.
 // The actual logic to fetch data based on the [id] param is inside PurchaseOrderDetailScreen.

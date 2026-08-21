@@ -1,4 +1,4 @@
-import AuditLogScreen from '../src/features/audit/AuditLogScreen';
+import AuditLogScreen from '../src/screens/audit/AuditLogScreen';
 
 export default function AuditLogPage() {
     return <AuditLogScreen />;

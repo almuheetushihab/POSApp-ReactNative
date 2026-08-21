@@ -1,4 +1,4 @@
-import OrderHistoryScreen from "../../src/features/orderhistory/OrderHistoryScreen";
+import OrderHistoryScreen from "../../src/screens/orderhistory/OrderHistoryScreen";
 
 
 export default OrderHistoryScreen
