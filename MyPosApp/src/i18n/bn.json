@@ -167,5 +167,11 @@
   "discount": "ডিসকাউন্ট",
   "tax": "ট্যাক্স",
   "paid_via": "এর মাধ্যমে পরিশোধিত",
-  "nav_reports": "রিপোর্ট"
+  "nav_reports": "রিপোর্ট",
+  "profile": "প্রোফাইল",
+  "edit_profile": "প্রোফাইল সম্পাদনা করুন",
+  "unknown": "অজানা",
+  "change_photo": "ছবি বদলান",
+  "remove_photo": "ছবি মুছুন",
+  "profile_updated": "প্রোফাইল আপডেট হয়েছে"
 }

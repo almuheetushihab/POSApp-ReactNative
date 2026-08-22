@@ -87,6 +87,14 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
+                    name="profile"
+                    options={{
+                        href: null,
+                        title: t('profile'),
+                    }}
+                />
+
+                <Tabs.Screen
                     name="settings"
                     options={{
                         title: t('nav_settings'),

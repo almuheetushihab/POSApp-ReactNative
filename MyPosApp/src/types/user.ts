@@ -5,6 +5,8 @@ export interface User {
     name: string;
     pin: string; // In a real app, this would be a hashed password
     role: UserRole;
+    email?: string;
+    avatar?: string; // URI to avatar image
 }
 
 export interface AuthState {

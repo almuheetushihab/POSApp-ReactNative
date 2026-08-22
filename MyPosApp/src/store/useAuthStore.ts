@@ -5,15 +5,16 @@ import { User, UserRole, AuthState } from '../types/user';
 
 // Mock Users Database
 const MOCK_USERS: User[] = [
-    { id: '1', name: 'Super Admin', pin: '0000', role: 'Admin' },
-    { id: '2', name: 'Store Manager', pin: '1234', role: 'Manager' },
-    { id: '3', name: 'John Cashier', pin: '1111', role: 'Cashier' },
+    { id: '1', name: 'Super Admin', pin: '0000', role: 'Admin', email: 'admin@shop.com' },
+    { id: '2', name: 'Store Manager', pin: '1234', role: 'Manager', email: 'manager@shop.com' },
+    { id: '3', name: 'John Cashier', pin: '1111', role: 'Cashier', email: 'cashier@shop.com' },
 ];
 
 interface AuthStoreState extends AuthState {
     login: (pin: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
+    updateProfile: (changes: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthStoreState>()(
@@ -51,6 +52,13 @@ export const useAuthStore = create<AuthStoreState>()(
                 const { user } = get();
                 if (!user) return false;
                 return allowedRoles.includes(user.role);
+            },
+
+            updateProfile: (changes: Partial<User>) => {
+                const { user } = get();
+                if (!user) return;
+                const updated = { ...user, ...changes } as User;
+                set({ user: updated });
             }
         }),
         {

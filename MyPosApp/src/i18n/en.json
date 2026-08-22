@@ -167,5 +167,12 @@
   "discount": "Discount",
   "tax": "Tax",
   "paid_via": "Paid via",
-  "nav_reports": "Reports"
+  "nav_reports": "Reports",
+  "profile": "Profile",
+  "edit_profile": "Edit Profile",
+  "unknown": "Unknown",
+  "change_photo": "Change Photo",
+  "remove_photo": "Remove Photo",
+  "profile_updated": "Profile updated"
 }
+

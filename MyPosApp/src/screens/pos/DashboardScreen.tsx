@@ -55,6 +55,10 @@ export const DashboardScreen = () => {
         );
     };
 
+    const goToProfile = () => {
+        router.push('/(tabs)/profile');
+    };
+
     // RBAC logic to hide/show UI parts
     const canViewAnalytics = hasPermission(['Admin', 'Manager']);
     const canViewProducts = hasPermission(['Admin', 'Manager']);
@@ -72,17 +76,17 @@ export const DashboardScreen = () => {
             >
                 {/* Header Profile Section */}
                 <View className="flex-row justify-between items-center mb-6">
-                    <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={goToProfile} className="flex-row items-center gap-3 flex-1 mr-3">
                         <View className="h-12 w-12 bg-blue-100 dark:bg-slate-800 rounded-full items-center justify-center border border-blue-200 dark:border-slate-700">
                             <Text className="font-bold text-blue-700 dark:text-blue-400 text-lg">
                                 {user?.name?.charAt(0) || 'U'}
                             </Text>
                         </View>
-                        <View>
+                        <View className="flex-1">
                             <Text className="text-2xl font-bold text-slate-800 dark:text-white">
                                 {getGreeting()},
                             </Text>
-                            <View className="flex-row items-center mt-1">
+                            <View className="flex-row items-center mt-1 flex-wrap">
                                 <Text className="text-slate-500 dark:text-slate-400 font-medium">
                                     {user?.name || t('user')}
                                 </Text>
@@ -97,7 +101,7 @@ export const DashboardScreen = () => {
                                 </View>
                             </View>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     
                     <TouchableOpacity onPress={handleLogout} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full">
                         <Ionicons name="log-out-outline" size={24} color="#ef4444" />

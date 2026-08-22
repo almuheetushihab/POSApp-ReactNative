@@ -114,6 +114,10 @@ export default function SettingsScreen() {
 
             <ScrollView className="p-5" showsVerticalScrollIndicator={false}>
 
+                <SettingsLink icon="person-circle-outline" label="profile" onPress={() => router.push('/(tabs)/profile')} />
+
+
+
                 {/* Shop Configuration Section */}
                 <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest">
                     {t('shop_config')}
