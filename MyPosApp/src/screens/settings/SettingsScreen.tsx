@@ -371,8 +371,17 @@ export default function SettingsScreen() {
                 </Text>
 
                 <View className="bg-white dark:bg-slate-900 rounded-3xl p-2 mb-6 shadow-sm border border-gray-100 dark:border-slate-800">
-                    <SettingsLink icon="shield-checkmark-outline" label="privacy" />
-                    <SettingsLink icon="document-text-outline" label="terms" last />
+                    <SettingsLink
+                        icon="shield-checkmark-outline"
+                        label="privacy"
+                        onPress={() => Alert.alert(t('privacy'), 'Privacy policy content is available on the web or via support. This app stores minimal personal data for order processing.')}
+                    />
+                    <SettingsLink
+                        icon="document-text-outline"
+                        label="terms"
+                        last
+                        onPress={() => Alert.alert(t('terms'), 'Terms & Conditions: Use of this app is subject to the store policies. Contact support for the full agreement.')}
+                    />
                 </View>
 
                 {/* Logout */}
@@ -394,9 +403,10 @@ export default function SettingsScreen() {
 
 const SettingsLink = ({label, icon, last, onPress, isProcessing = false}: any) => {
     const {t} = useTranslation();
+    const handle = onPress || (() => Alert.alert(t(label), t(label + '_desc') || 'Details coming soon'));
     return (
         <Pressable
-            onPress={onPress}
+            onPress={handle}
             disabled={isProcessing}
             className={`flex-row items-center justify-between p-4 ${!last ? 'border-b border-gray-50 dark:border-slate-800' : ''} ${isProcessing ? 'opacity-50' : ''}`}
         >

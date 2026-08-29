@@ -172,8 +172,13 @@ export const DashboardScreen = () => {
                     />
                     
                     <QuickActionButton
-                        icon="document-text" label="history"
-                        color="#10b981" onPress={() => router.push('/history')}
+                        icon="time-outline" label="history"
+                        color="#0ea5e9" onPress={() => router.push('/history')}
+                    />
+
+                    <QuickActionButton
+                        icon="bar-chart-outline" label="reports"
+                        color="#3b82f6" onPress={() => router.push('/reports')}
                     />
 
                     {/* Restricted Actions */}
@@ -264,15 +269,17 @@ const QuickActionButton = ({icon, label, onPress, color, disabled = false}: any)
         <TouchableOpacity
             onPress={onPress}
             activeOpacity={disabled ? 1 : 0.7}
-            className={`bg-white dark:bg-slate-900 w-[48%] p-6 rounded-2xl mb-4 items-center justify-center border border-gray-100 dark:border-slate-800 ${disabled ? 'opacity-50 bg-gray-50' : 'shadow-sm'}`}
+            className={`relative bg-white dark:bg-slate-900 w-[48%] p-5 rounded-2xl mb-4 items-center justify-center border border-slate-200/80 dark:border-slate-700/70 ${disabled ? 'opacity-50 bg-gray-50 dark:bg-slate-900' : 'shadow-sm'}`}
         >
             {disabled && (
                 <View className="absolute top-2 right-2 bg-gray-200 dark:bg-slate-700 p-1 rounded-full">
                     <Ionicons name="lock-closed" size={12} color="#64748b" />
                 </View>
             )}
-            <Ionicons name={icon} size={32} color={color} style={{marginBottom: 8}}/>
-            <Text className="font-semibold text-slate-700 dark:text-slate-200 text-center">
+            <View className="h-12 w-12 rounded-full items-center justify-center mb-3 bg-slate-100 dark:bg-slate-800">
+                <Ionicons name={icon} size={24} color={color}/>
+            </View>
+            <Text className="font-semibold text-slate-700 dark:text-slate-200 text-center text-[15px]">
                 {t(label) || label}
             </Text>
         </TouchableOpacity>
