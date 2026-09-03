@@ -83,7 +83,7 @@ const CustomerListScreen = () => {
 
             <TouchableOpacity
                 className="absolute right-6 bottom-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-                onPress={() => router.push('/screens/customer/add')}
+                onPress={() => router.push('/features/customer/add')}
             >
                 <Feather name="plus" size={28} color="white" />
             </TouchableOpacity>
