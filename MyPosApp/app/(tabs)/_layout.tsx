@@ -76,13 +76,16 @@ export default function TabLayout() {
                 }}
             />
 
-            {/* Hidden from tab bar, still navigable via router.push() */}
             <Tabs.Screen
                 name="history"
                 options={{
-                    href: null,
+                    title: 'History',
+                    tabBarIcon: ({ color, size, focused }) => (
+                        <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
+                    ),
                 }}
             />
+            {/* Hidden from tab bar, still navigable via router.push() */}
             <Tabs.Screen
                 name="reports"
                 options={{

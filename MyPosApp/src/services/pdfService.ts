@@ -12,6 +12,8 @@ const formatAttributes = (attributes?: ProductAttributes) => {
         .join(', ') + '</span>';
 };
 
+let isPrintInProgress = false;
+
 export const pdfService = {
 
     generateHtml: (order: Order) => {
@@ -238,11 +240,20 @@ export const pdfService = {
     },
 
     printOrder: async (order: Order) => {
+        if (isPrintInProgress) {
+            console.warn('Receipt print already in progress. Ignoring duplicate request.');
+            return;
+        }
+
+        isPrintInProgress = true;
+
         try {
             const html = pdfService.generateHtml(order);
             await Print.printAsync({ html });
         } catch (error) {
             console.error('Error printing receipt:', error);
+        } finally {
+            isPrintInProgress = false;
         }
     }
 };

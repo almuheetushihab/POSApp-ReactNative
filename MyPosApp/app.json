@@ -5,11 +5,11 @@
     "scheme": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/pos_app_logo.jpeg",
+    "icon": "./assets/pos_app_logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/pos_app_logo.jpeg",
+      "image": "./assets/pos_app_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/pos_app_logo.jpeg",
+        "foregroundImage": "./assets/pos_app_logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -27,7 +27,7 @@
       "package": "com.almuheetu.MyPosApp"
     },
     "web": {
-      "favicon": "./assets/pos_app_logo.jpeg"
+      "favicon": "./assets/pos_app_logo.png"
     },
     "plugins": [
       "expo-font",
@@ -39,7 +39,9 @@
           "merchantIdentifier": "merchant.com.almuheetu.MyPosApp",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "expo-router",
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

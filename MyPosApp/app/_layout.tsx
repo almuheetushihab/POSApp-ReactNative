@@ -1,7 +1,9 @@
+// @ts-ignore
 import "../src/global.css";
 import "../src/i18n";
 import { Stack } from 'expo-router';
 import { useEffect } from "react";
+import { LogBox } from "react-native";
 import { useColorScheme } from "nativewind";
 import { useAppStore } from "../src/store/useAppStore";
 import NetInfo from "@react-native-community/netinfo";
@@ -10,6 +12,8 @@ import { SyncService } from "../src/services/SyncService";
 import { StripeProvider } from '@stripe/stripe-react-native';
 
 export default function RootLayout() {
+    LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
+
     const { theme } = useAppStore();
     const { setColorScheme } = useColorScheme();
     const { setIsOnline } = useNetworkStore();
