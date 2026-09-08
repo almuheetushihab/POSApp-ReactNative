@@ -7,12 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/pos_app_logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/pos_app_logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.almuheetu.MyPosApp"
@@ -22,7 +16,6 @@
         "foregroundImage": "./assets/pos_app_logo.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.almuheetu.MyPosApp"
     },
