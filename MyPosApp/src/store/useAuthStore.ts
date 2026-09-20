@@ -10,7 +10,14 @@ const MOCK_USERS: User[] = [
     { id: '3', name: 'John Cashier', pin: '1111', role: 'Cashier', email: 'cashier@shop.com' },
 ];
 
+interface RegisteredUser {
+    email: string;
+    password: string;
+    shopName: string;
+}
+
 interface AuthStoreState extends AuthState {
+    registeredUsers: RegisteredUser[];
     hasHydrated: boolean;
     setHasHydrated: (value: boolean) => void;
     login: (pin: string) => Promise<{ success: boolean; message?: string }>;
@@ -29,6 +36,7 @@ export const useAuthStore = create<AuthStoreState>()(
             user: null,
             token: null,
             activeRole: null,
+            registeredUsers: [],
             hasHydrated: false,
             setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
 
@@ -50,16 +58,37 @@ export const useAuthStore = create<AuthStoreState>()(
                 await new Promise((resolve) => setTimeout(resolve, 800));
 
                 const normalizedEmail = email.trim().toLowerCase();
-                const user = MOCK_USERS.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail);
+                const registeredUser = get().registeredUsers.find(
+                    (candidate) => candidate.email === normalizedEmail && candidate.password === password
+                );
+                const mockUser = MOCK_USERS.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail);
 
-                if (!user || password.length < 6) {
+                if (registeredUser) {
+                    const user: User = {
+                        id: `registered-${normalizedEmail}`,
+                        name: registeredUser.shopName,
+                        pin: '',
+                        role: 'Admin',
+                        email: registeredUser.email,
+                    };
+
+                    set({
+                        isAuthenticated: true,
+                        user,
+                        token: `jwt-token-${user.id}-${Date.now()}`,
+                        activeRole: null,
+                    });
+                    return { success: true };
+                }
+
+                if (!mockUser || password.length < 6) {
                     return { success: false, message: 'Invalid email or password' };
                 }
 
                 set({
                     isAuthenticated: true,
-                    user,
-                    token: `jwt-token-${user.id}-${Date.now()}`,
+                    user: mockUser,
+                    token: `jwt-token-${mockUser.id}-${Date.now()}`,
                     activeRole: null,
                 });
                 return { success: true };
@@ -81,11 +110,18 @@ export const useAuthStore = create<AuthStoreState>()(
                     email: normalizedEmail,
                 };
 
+                const registeredUser: RegisteredUser = {
+                    email: normalizedEmail,
+                    password,
+                    shopName: newUser.name,
+                };
+
                 set({
                     isAuthenticated: true,
                     user: newUser,
                     token: `jwt-token-${newUser.id}`,
                     activeRole: null,
+                    registeredUsers: [...get().registeredUsers, registeredUser],
                 });
                 return { success: true };
             },
