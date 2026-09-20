@@ -1,7 +1,7 @@
 // @ts-ignore
 import "../src/global.css";
 import "../src/i18n";
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from "react";
 import { LogBox } from "react-native";
 import { useColorScheme } from "nativewind";
@@ -10,6 +10,37 @@ import NetInfo from "@react-native-community/netinfo";
 import { useNetworkStore } from "../src/store/useNetworkStore";
 import { SyncService } from "../src/services/SyncService";
 import { StripeProvider } from '@stripe/stripe-react-native';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
+
+function RouteGuard() {
+    const router = useRouter();
+    const segments = useSegments();
+    const { isAuthenticated, isLoading } = useAuth();
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        const inAuthGroup = segments[0] === '(auth)';
+        if (!isAuthenticated && !inAuthGroup) {
+            router.replace('/(auth)/login');
+        } else if (isAuthenticated && inAuthGroup) {
+            router.replace('/(tabs)/home');
+        }
+    }, [isAuthenticated, isLoading, router, segments]);
+
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="dashboard" />
+            <Stack.Screen
+                name="productdetails"
+                options={{ presentation: 'modal', headerShown: false }}
+            />
+        </Stack>
+    );
+}
 
 export default function RootLayout() {
     LogBox.ignoreLogs(['SafeAreaView has been deprecated']);
@@ -38,15 +69,9 @@ export default function RootLayout() {
 
     return (
         <StripeProvider publishableKey="pk_test_51TfPhkPhMna5WFviWDyoj44zk6BReZB1C7nOKxu0sUX1oQvT7hyIW203qdtIWClsXgLT5z6gq3vehaLhAsdrvAEe00cEyOtvu5">
-            <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="dashboard" />
-                <Stack.Screen
-                    name="productdetails"
-                    options={{ presentation: 'modal', headerShown: false }}
-                />
-            </Stack>
+            <AuthProvider>
+                <RouteGuard />
+            </AuthProvider>
         </StripeProvider>
     );
 }

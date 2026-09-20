@@ -3,7 +3,7 @@ export type UserRole = 'Admin' | 'Manager' | 'Cashier';
 export interface User {
     id: string;
     name: string;
-    pin: string; // In a real app, this would be a hashed password
+    pin: string; // Staff PIN; email accounts can leave this empty until PIN access is enabled.
     role: UserRole;
     email?: string;
     avatar?: string; // URI to avatar image

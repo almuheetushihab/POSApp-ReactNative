@@ -11,7 +11,11 @@ const MOCK_USERS: User[] = [
 ];
 
 interface AuthStoreState extends AuthState {
+    hasHydrated: boolean;
+    setHasHydrated: (value: boolean) => void;
     login: (pin: string) => Promise<{ success: boolean; message?: string }>;
+    loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    register: (shopName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
     updateProfile: (changes: Partial<User>) => void;
@@ -23,6 +27,8 @@ export const useAuthStore = create<AuthStoreState>()(
             isAuthenticated: false,
             user: null,
             token: null,
+            hasHydrated: false,
+            setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
 
             login: async (pin: string) => {
                 // Simulate API call delay
@@ -42,6 +48,48 @@ export const useAuthStore = create<AuthStoreState>()(
                 } else {
                     return { success: false, message: 'Invalid PIN' };
                 }
+            },
+
+            loginWithEmail: async (email: string, password: string) => {
+                await new Promise((resolve) => setTimeout(resolve, 800));
+
+                const normalizedEmail = email.trim().toLowerCase();
+                const user = MOCK_USERS.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail);
+
+                if (!user || password.length < 6) {
+                    return { success: false, message: 'Invalid email or password' };
+                }
+
+                set({
+                    isAuthenticated: true,
+                    user,
+                    token: `jwt-token-${user.id}-${Date.now()}`,
+                });
+                return { success: true };
+            },
+
+            register: async (shopName: string, email: string, password: string) => {
+                await new Promise((resolve) => setTimeout(resolve, 800));
+
+                const normalizedEmail = email.trim().toLowerCase();
+                if (!shopName.trim() || !normalizedEmail || password.length < 6) {
+                    return { success: false, message: 'Please complete all fields correctly' };
+                }
+
+                const newUser: User = {
+                    id: `user-${Date.now()}`,
+                    name: shopName.trim(),
+                    pin: '',
+                    role: 'Admin',
+                    email: normalizedEmail,
+                };
+
+                set({
+                    isAuthenticated: true,
+                    user: newUser,
+                    token: `jwt-token-${newUser.id}`,
+                });
+                return { success: true };
             },
 
             logout: () => {
@@ -64,6 +112,9 @@ export const useAuthStore = create<AuthStoreState>()(
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => AsyncStorage),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );
