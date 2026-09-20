@@ -58,11 +58,11 @@ const ProductReportRow = ({ rank, name, quantity, revenue }: { rank: number, nam
 export default function ReportScreen() {
     const { orders } = useOrderStore();
     const [timePeriod, setTimePeriod] = useState<TimePeriod>('TODAY');
-    const { user } = useAuthStore();
+    const { activeRole } = useAuthStore();
     const router = useRouter();
     const { t } = useTranslation();
 
-    const canViewReports = user?.role === 'Admin' || user?.role === 'Manager';
+    const canViewReports = activeRole === 'Admin' || activeRole === 'Manager';
 
     const reportData = useMemo(() => {
         if (!canViewReports) return null;

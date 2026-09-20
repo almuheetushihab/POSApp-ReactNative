@@ -15,7 +15,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 function RouteGuard() {
     const router = useRouter();
     const segments = useSegments();
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, activeRole } = useAuth();
 
     useEffect(() => {
         if (isLoading) return;
@@ -23,10 +23,12 @@ function RouteGuard() {
         const inAuthGroup = segments[0] === '(auth)';
         if (!isAuthenticated && !inAuthGroup) {
             router.replace('/(auth)/login');
-        } else if (isAuthenticated && inAuthGroup) {
+        } else if (isAuthenticated && !activeRole && segments.join('/') !== '(auth)/pin') {
+            router.replace('/(auth)/pin');
+        } else if (isAuthenticated && activeRole && inAuthGroup) {
             router.replace('/(tabs)/home');
         }
-    }, [isAuthenticated, isLoading, router, segments]);
+    }, [activeRole, isAuthenticated, isLoading, router, segments]);
 
     return (
         <Stack screenOptions={{ headerShown: false }}>

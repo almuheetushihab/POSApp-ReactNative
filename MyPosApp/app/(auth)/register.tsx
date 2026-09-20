@@ -34,7 +34,7 @@ export default function RegisterScreen() {
         setIsSubmitting(false);
 
         if (result.success) {
-            router.replace('/(tabs)/home');
+            router.replace('/(auth)/pin');
         } else {
             Alert.alert('Unable to create account', result.message ?? 'Please try again.');
         }

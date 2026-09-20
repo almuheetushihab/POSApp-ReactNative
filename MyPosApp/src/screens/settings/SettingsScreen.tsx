@@ -17,7 +17,7 @@ export default function SettingsScreen() {
 
     const {theme, setTheme, language, setLanguage} = useAppStore();
     const {shopInfo, updateShopInfo, taxSettings, updateTaxSettings} = useSettingsStore();
-    const {user, logout} = useAuthStore();
+    const {activeRole, logout} = useAuthStore();
 
     const [formData, setFormData] = useState(shopInfo);
     const [taxData, setTaxData] = useState<TaxSettings>(taxSettings);
@@ -178,7 +178,7 @@ export default function SettingsScreen() {
                     </Pressable>
                 </View>
 
-                {user?.role === 'Admin' && (
+                {activeRole === 'Admin' && (
                     <>
                         <Text className="text-slate-500 dark:text-slate-400 font-bold mb-3 uppercase text-xs tracking-widest mt-2">
                             Admin

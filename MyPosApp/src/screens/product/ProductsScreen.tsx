@@ -30,7 +30,7 @@ export default function ProductsScreen() {
     const [isCartVisible, setIsCartVisible] = useState(false);
     const [activeCategory, setActiveCategory] = useState<ProductCategory>('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const { user } = useAuthStore();
+    const { activeRole } = useAuthStore();
 
     const {
         products,
@@ -174,7 +174,7 @@ export default function ProductsScreen() {
                 />
             )}
 
-            {(user?.role === 'Admin' || user?.role === 'Manager') && (
+            {(activeRole === 'Admin' || activeRole === 'Manager') && (
                 <TouchableOpacity
                     onPress={() => setIsAddModalVisible(true)}
                     className="absolute bottom-6 right-6 bg-blue-600 h-14 w-14 rounded-full items-center justify-center shadow-lg shadow-blue-400 z-50"

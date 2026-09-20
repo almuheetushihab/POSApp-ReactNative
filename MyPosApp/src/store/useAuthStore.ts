@@ -16,6 +16,7 @@ interface AuthStoreState extends AuthState {
     login: (pin: string) => Promise<{ success: boolean; message?: string }>;
     loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     register: (shopName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    lock: () => void;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
     updateProfile: (changes: Partial<User>) => void;
@@ -27,6 +28,7 @@ export const useAuthStore = create<AuthStoreState>()(
             isAuthenticated: false,
             user: null,
             token: null,
+            activeRole: null,
             hasHydrated: false,
             setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
 
@@ -37,13 +39,7 @@ export const useAuthStore = create<AuthStoreState>()(
                 const user = MOCK_USERS.find(u => u.pin === pin);
                 
                 if (user) {
-                    // Simulate a JWT token generation
-                    const mockToken = `jwt-token-${user.id}-${Date.now()}`;
-                    set({
-                        isAuthenticated: true,
-                        user: user,
-                        token: mockToken
-                    });
+                    set({ activeRole: user.role });
                     return { success: true };
                 } else {
                     return { success: false, message: 'Invalid PIN' };
@@ -64,6 +60,7 @@ export const useAuthStore = create<AuthStoreState>()(
                     isAuthenticated: true,
                     user,
                     token: `jwt-token-${user.id}-${Date.now()}`,
+                    activeRole: null,
                 });
                 return { success: true };
             },
@@ -88,18 +85,22 @@ export const useAuthStore = create<AuthStoreState>()(
                     isAuthenticated: true,
                     user: newUser,
                     token: `jwt-token-${newUser.id}`,
+                    activeRole: null,
                 });
                 return { success: true };
             },
 
+            lock: () => {
+                set({ activeRole: null });
+            },
+
             logout: () => {
-                set({ isAuthenticated: false, user: null, token: null });
+                set({ isAuthenticated: false, user: null, token: null, activeRole: null });
             },
 
             hasPermission: (allowedRoles: UserRole[]) => {
-                const { user } = get();
-                if (!user) return false;
-                return allowedRoles.includes(user.role);
+                const { activeRole } = get();
+                return activeRole !== null && allowedRoles.includes(activeRole);
             },
 
             updateProfile: (changes: Partial<User>) => {

@@ -33,7 +33,7 @@ export default function LoginScreen() {
         setIsSubmitting(false);
 
         if (result.success) {
-            router.replace('/(tabs)/home');
+            router.replace('/(auth)/pin');
         } else {
             Alert.alert('Unable to sign in', result.message ?? 'Check your details and try again.');
         }

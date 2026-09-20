@@ -11,7 +11,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 export default function ProductDetailsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const { user } = useAuthStore();
+    const { activeRole } = useAuthStore();
 
     const {deleteProduct, products} = useProductStore();
 
@@ -66,7 +66,7 @@ export default function ProductDetailsScreen() {
                         <Ionicons name="arrow-back" size={24} color="#333"/>
                     </TouchableOpacity>
 
-                    {(user?.role === 'Admin' || user?.role === 'Manager') && (
+                    {(activeRole === 'Admin' || activeRole === 'Manager') && (
                         <View className="absolute top-4 right-4 flex-row gap-3 z-10">
                             {/* Edit Button */}
                             <TouchableOpacity

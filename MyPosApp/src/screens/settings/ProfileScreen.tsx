@@ -12,7 +12,7 @@ import { useSettingsStore } from '../../store/useSettingsStore';
 export default function ProfileScreen() {
     const router = useRouter();
     const { t } = useTranslation();
-    const { user, updateProfile, logout } = useAuthStore();
+    const { user, activeRole, updateProfile, lock, logout } = useAuthStore();
     const { shopInfo } = useSettingsStore();
     const [loading, setLoading] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -68,6 +68,11 @@ export default function ProfileScreen() {
         ]);
     };
 
+    const handleLock = () => {
+        lock();
+        router.replace('/(auth)/pin');
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
             <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-200 bg-white">
@@ -112,17 +117,25 @@ export default function ProfileScreen() {
                                 <Text className="mt-1 text-sm text-slate-500">{user?.email || 'user@shop.com'}</Text>
 
                                 <View className="mt-3 px-3 py-1.5 rounded-full bg-blue-100 border border-blue-200">
-                                    <Text className="text-xs font-bold text-blue-700">{user?.role || 'Cashier'}</Text>
+                                    <Text className="text-xs font-bold text-blue-700">{activeRole || 'Locked'}</Text>
                                 </View>
 
                                 <View className="mt-6 flex-row gap-3">
                                     <Pressable onPress={() => setEditing(true)} className="px-4 py-2 bg-blue-600 rounded-lg">
                                         <Text className="text-white font-bold">Edit Profile</Text>
                                     </Pressable>
+
                                     <Pressable onPress={() => router.push('/(tabs)/settings')} className="px-4 py-2 bg-slate-100 rounded-lg">
                                         <Text className="font-bold">Account Settings</Text>
                                     </Pressable>
                                 </View>
+                                <Pressable
+                                    onPress={handleLock}
+                                    className="mt-4 flex-row items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm"
+                                >
+                                    <Ionicons name="lock-closed-outline" size={20} color="#d97706" />
+                                    <Text className="ml-2 text-base font-bold text-amber-700">Lock System / Switch User</Text>
+                                </Pressable>
                             </>
                         ) : (
                             <View className="w-full mt-4">
