@@ -7,13 +7,14 @@ import {
     Pressable,
     ScrollView,
     Text,
-    TextInput,
     View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
+import { CustomInput } from '../../src/components/CustomInput';
+import { isValidEmail } from '../../src/utils/validation';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -21,10 +22,16 @@ export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
     const handleSubmit = async () => {
-        if (!email.trim() || !password) {
-            Alert.alert('Missing information', 'Enter your email and password to continue.');
+        const nextErrors: typeof errors = {};
+        if (!email.trim()) nextErrors.email = 'Email address is required.';
+        else if (!isValidEmail(email)) nextErrors.email = 'Enter a valid email address.';
+        if (!password) nextErrors.password = 'Password is required.';
+        else if (password.length < 8) nextErrors.password = 'Use at least 8 characters.';
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length) {
             return;
         }
 
@@ -64,11 +71,12 @@ export default function LoginScreen() {
                         <View className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                             <Text className="mb-6 text-xl font-bold text-slate-900">Sign in to your account</Text>
 
-                            <Text className="mb-2 text-sm font-semibold text-slate-700">Email address</Text>
-                            <TextInput
-                                className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900"
+                            <CustomInput
+                                label="Email address"
+                                required
+                                error={errors.email}
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(value) => { setEmail(value); if (errors.email) setErrors({...errors, email: undefined}); }}
                                 placeholder="you@yourshop.com"
                                 placeholderTextColor="#94a3b8"
                                 keyboardType="email-address"
@@ -77,15 +85,16 @@ export default function LoginScreen() {
                             />
 
                             <View className="flex-row items-center justify-between">
-                                <Text className="mb-2 text-sm font-semibold text-slate-700">Password</Text>
                                 <Pressable onPress={() => Alert.alert('Coming soon', 'Password recovery will be available soon.')}>
-                                    <Text className="mb-2 text-sm font-semibold text-blue-600">Forgot Password?</Text>
+                                    <Text className="mb-2 ml-auto text-sm font-semibold text-blue-600">Forgot Password?</Text>
                                 </Pressable>
                             </View>
-                            <TextInput
-                                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900"
+                            <CustomInput
+                                label="Password"
+                                required
+                                error={errors.password}
                                 value={password}
-                                onChangeText={setPassword}
+                                onChangeText={(value) => { setPassword(value); if (errors.password) setErrors({...errors, password: undefined}); }}
                                 placeholder="Enter your password"
                                 placeholderTextColor="#94a3b8"
                                 secureTextEntry

@@ -6,6 +6,7 @@ import {Ionicons} from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import {useProductStore} from '../store/useProductStore';
 import {Product, ProductCategory, ProductAttributes} from '../types/product';
+import {CustomInput} from './CustomInput';
 
 interface AddProductModalProps {
     visible: boolean;
@@ -24,6 +25,7 @@ export const AddProductModal = ({visible, onClose, productToEdit}: AddProductMod
     const [barcode, setBarcode] = useState('');
     const [image, setImage] = useState<string | null>(null);
     const [attributes, setAttributes] = useState<ProductAttributes>({});
+    const [errors, setErrors] = useState<{name?: string; price?: string; stock?: string}>({});
 
     useEffect(() => {
         if (productToEdit) {
@@ -67,8 +69,14 @@ export const AddProductModal = ({visible, onClose, productToEdit}: AddProductMod
     };
 
     const handleSubmit = () => {
-        if (!name || !price || !stock) {
-            Alert.alert("Missing Info", "Please fill Name, Price and Stock.");
+        const nextErrors: typeof errors = {};
+        if (!name.trim()) nextErrors.name = 'Product name is required.';
+        if (!price.trim()) nextErrors.price = 'Price is required.';
+        else if (!/^\d+(\.\d{1,2})?$/.test(price) || Number(price) < 0) nextErrors.price = 'Enter a valid non-negative price.';
+        if (!stock.trim()) nextErrors.stock = 'Stock is required.';
+        else if (!/^\d+$/.test(stock) || Number(stock) < 0) nextErrors.stock = 'Stock must be a whole number.';
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length) {
             return;
         }
 
@@ -147,10 +155,10 @@ export const AddProductModal = ({visible, onClose, productToEdit}: AddProductMod
                         </TouchableOpacity>
                     </View>
 
-                    <FormInput label="Product Name" value={name} onChange={setName} placeholder="Ex: Chicken Burger" />
+                    <CustomInput label="Product name" required error={errors.name} value={name} onChangeText={(value) => {setName(value); if (errors.name) setErrors({...errors, name: undefined});}} placeholder="Ex: Chicken Burger" />
                     <View className="flex-row gap-4 mb-6">
-                        <FormInput label="Price" value={price} onChange={setPrice} placeholder="0.00" keyboardType="numeric" containerClass="flex-1" />
-                        <FormInput label="Stock" value={stock} onChange={setStock} placeholder="0" keyboardType="numeric" containerClass="flex-1" />
+                        <CustomInput label="Price" required error={errors.price} value={price} onChangeText={(value) => {const next = value.replace(/[^0-9.]/g, ''); setPrice(next); if (errors.price) setErrors({...errors, price: undefined});}} placeholder="0.00" keyboardType="decimal-pad" containerClassName="flex-1" />
+                        <CustomInput label="Stock" required error={errors.stock} value={stock} onChangeText={(value) => {const next = value.replace(/\D/g, ''); setStock(next); if (errors.stock) setErrors({...errors, stock: undefined});}} placeholder="0" keyboardType="number-pad" containerClassName="flex-1" />
                     </View>
 
                     <View className="mb-6">

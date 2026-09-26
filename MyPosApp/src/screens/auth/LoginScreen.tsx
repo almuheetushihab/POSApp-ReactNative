@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    View, Text, Alert, TextInput, TouchableOpacity,
+    View, Text, Alert, TouchableOpacity,
     TouchableWithoutFeedback, Keyboard, ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from "../../store/useAuthStore";
 import { Ionicons } from "@expo/vector-icons";
+import { CustomInput } from "../../components/CustomInput";
 
 export const LoginScreen = () => {
     const router = useRouter();
@@ -17,12 +18,14 @@ export const LoginScreen = () => {
     const [pin, setPin] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const [error, setError] = useState('');
 
     const handleLogin = async () => {
         if (pin.length !== 4) {
-            Alert.alert('Error', 'Please enter a 4-digit PIN');
+            setError('Enter your 4-digit access PIN.');
             return;
         }
+        setError('');
         
         setIsLoading(true);
         const result = await login(pin);
@@ -60,17 +63,14 @@ export const LoginScreen = () => {
 
                     {/* Input Section */}
                     <View className="w-full">
-                        <Text className="text-slate-700 dark:text-slate-300 font-medium mb-2 ml-1">
-                            {t('access_pin') || 'Access PIN'}
-                        </Text>
-
-                        <TextInput
-                            className={`w-full bg-gray-50 dark:bg-slate-900 p-4 rounded-2xl text-2xl text-center font-bold tracking-[0.5em] border-2 text-slate-800 dark:text-white
-                            ${isFocused ? 'border-blue-600' : 'border-gray-200 dark:border-slate-700'}`}
+                        <CustomInput
+                            label={t('access_pin') || 'Access PIN'}
+                            required
+                            error={error}
+                            className={`text-center text-2xl font-bold tracking-[0.5em] ${isFocused ? 'border-blue-600' : ''}`}
                             value={pin}
-                            onChangeText={setPin}
+                            onChangeText={(value) => { setPin(value.replace(/\D/g, '')); if (error) setError(''); }}
                             placeholder="••••"
-                            placeholderTextColor="#94a3b8"
                             keyboardType="numeric"
                             secureTextEntry={true}
                             maxLength={4}

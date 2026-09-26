@@ -1,111 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useCustomerStore } from '../../store/useCustomerStore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { CustomerDetails } from '../../types/order';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CustomInput } from '../../components/CustomInput';
+import { validateCustomer } from '../../utils/validation';
 
 const EditCustomerScreen = () => {
-    const { customers, updateCustomer } = useCustomerStore();
-    const { id } = useLocalSearchParams();
+    const {customers, updateCustomer} = useCustomerStore();
+    const {id} = useLocalSearchParams();
     const [customer, setCustomer] = useState<Partial<CustomerDetails> | null>(null);
+    const [errors, setErrors] = useState<{name?: string; phone?: string; email?: string}>({});
 
-    useEffect(() => {
-        const customerToEdit = customers.find((c) => c.id === id);
-        if (customerToEdit) {
-            setCustomer(customerToEdit);
-        }
-    }, [id, customers]);
+    useEffect(() => setCustomer(customers.find((item) => item.id === id) || null), [id, customers]);
 
     const handleUpdateCustomer = () => {
-        if (customer && customer.id) {
-            if (!customer.name?.trim() || !customer.phone?.trim()) {
-                alert('Customer Name and Phone are required.');
-                return;
-            }
-            updateCustomer(customer.id, customer);
-            router.back();
-        }
+        if (!customer?.id) return;
+        const nextErrors = validateCustomer({name: customer.name || '', phone: customer.phone || '', email: customer.email || ''});
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length) return;
+        updateCustomer(customer.id, customer);
+        router.back();
     };
 
-    const handleChange = (field: keyof CustomerDetails, value: string) => {
-        if (customer) {
-            setCustomer({ ...customer, [field]: value });
-        }
-    };
-
-    if (!customer) {
-        return (
-            <View className="flex-1 items-center justify-center bg-slate-50 dark:bg-slate-950">
-                <ActivityIndicator size="large" color="#3b82f6" />
-                <Text className="text-slate-500 mt-4">Loading customer...</Text>
-            </View>
-        );
-    }
+    if (!customer) return <View className="flex-1 items-center justify-center bg-slate-50"><ActivityIndicator size="large" color="#3b82f6" /></View>;
+    const change = (field: keyof CustomerDetails, value: string) => setCustomer({...customer, [field]: value});
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
             <SafeAreaView edges={['bottom']} className="flex-1 bg-slate-50 dark:bg-slate-950">
-                <View className="p-6 flex-1">
-                    <View className="mb-4">
-                        <Text className="text-base font-medium text-slate-600 dark:text-slate-300 mb-2">Customer Name*</Text>
-                        <TextInput
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 text-slate-800 dark:text-white"
-                            placeholder="Enter full name"
-                            placeholderTextColor="#94a3b8"
-                            value={customer.name}
-                            onChangeText={(val) => handleChange('name', val)}
-                        />
-                    </View>
-
-                    <View className="mb-4">
-                        <Text className="text-base font-medium text-slate-600 dark:text-slate-300 mb-2">Phone Number*</Text>
-                        <TextInput
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 text-slate-800 dark:text-white"
-                            placeholder="Enter phone number"
-                            placeholderTextColor="#94a3b8"
-                            value={customer.phone}
-                            onChangeText={(val) => handleChange('phone', val)}
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-
-                    <View className="mb-4">
-                        <Text className="text-base font-medium text-slate-600 dark:text-slate-300 mb-2">Email (Optional)</Text>
-                        <TextInput
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg h-12 px-4 text-slate-800 dark:text-white"
-                            placeholder="Enter email address"
-                            placeholderTextColor="#94a3b8"
-                            value={customer.email || ''}
-                            onChangeText={(val) => handleChange('email', val)}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
-
-                    <View className="mb-6">
-                        <Text className="text-base font-medium text-slate-600 dark:text-slate-300 mb-2">Address (Optional)</Text>
-                        <TextInput
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg h-24 px-4 py-3 text-slate-800 dark:text-white"
-                            placeholder="Enter full address"
-                            placeholderTextColor="#94a3b8"
-                            value={customer.address || ''}
-                            onChangeText={(val) => handleChange('address', val)}
-                            multiline
-                            textAlignVertical="top"
-                        />
-                    </View>
-
-                    <TouchableOpacity
-                        className="bg-blue-600 h-12 rounded-lg items-center justify-center"
-                        onPress={handleUpdateCustomer}
-                    >
-                        <Text className="text-white font-bold text-base">Update Customer</Text>
+                <ScrollView className="flex-1" contentContainerStyle={{padding: 24}} keyboardShouldPersistTaps="handled">
+                    <Text className="mb-7 text-2xl font-bold text-slate-900 dark:text-white">Edit customer</Text>
+                    <CustomInput label="Customer name" required error={errors.name} value={customer.name} placeholder="Enter full name"
+                        onChangeText={(value) => {change('name', value); if (errors.name) setErrors({...errors, name: undefined});}} />
+                    <CustomInput label="Phone number" required error={errors.phone} value={customer.phone} placeholder="Enter phone number"
+                        onChangeText={(value) => {change('phone', value); if (errors.phone) setErrors({...errors, phone: undefined});}} keyboardType="phone-pad" />
+                    <CustomInput label="Email" error={errors.email} value={customer.email || ''} placeholder="Enter email address"
+                        onChangeText={(value) => {change('email', value); if (errors.email) setErrors({...errors, email: undefined});}} keyboardType="email-address" autoCapitalize="none" />
+                    <CustomInput label="Address" value={customer.address || ''} placeholder="Enter full address" onChangeText={(value) => change('address', value)}
+                        multiline textAlignVertical="top" className="min-h-[96px]" />
+                    <TouchableOpacity className="mt-2 h-14 items-center justify-center rounded-2xl bg-blue-600" onPress={handleUpdateCustomer}>
+                        <Text className="text-base font-bold text-white">Update customer</Text>
                     </TouchableOpacity>
-                </View>
+                </ScrollView>
             </SafeAreaView>
         </KeyboardAvoidingView>
     );

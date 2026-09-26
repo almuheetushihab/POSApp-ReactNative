@@ -7,13 +7,14 @@ import {
     Pressable,
     ScrollView,
     Text,
-    TextInput,
     View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
+import { CustomInput } from '../../src/components/CustomInput';
+import { isValidEmail } from '../../src/utils/validation';
 
 export default function RegisterScreen() {
     const router = useRouter();
@@ -22,10 +23,17 @@ export default function RegisterScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState<{ shopName?: string; email?: string; password?: string }>({});
 
     const handleSubmit = async () => {
-        if (!shopName.trim() || !email.trim() || password.length < 6) {
-            Alert.alert('Check your details', 'Enter all fields and use a password with at least 6 characters.');
+        const nextErrors: typeof errors = {};
+        if (!shopName.trim()) nextErrors.shopName = 'Shop name is required.';
+        else if (shopName.trim().length < 2) nextErrors.shopName = 'Enter at least 2 characters.';
+        if (!email.trim()) nextErrors.email = 'Email address is required.';
+        else if (!isValidEmail(email)) nextErrors.email = 'Enter a valid email address.';
+        if (password.length < 8) nextErrors.password = 'Use at least 8 characters.';
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length) {
             return;
         }
 
@@ -67,21 +75,23 @@ export default function RegisterScreen() {
                         <View className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
                             <Text className="mb-6 text-xl font-bold text-slate-900">Shop details</Text>
 
-                            <Text className="mb-2 text-sm font-semibold text-slate-700">Business / Shop name</Text>
-                            <TextInput
-                                className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900"
+                            <CustomInput
+                                label="Business / Shop name"
+                                required
+                                error={errors.shopName}
                                 value={shopName}
-                                onChangeText={setShopName}
+                                onChangeText={(value) => { setShopName(value); if (errors.shopName) setErrors({...errors, shopName: undefined}); }}
                                 placeholder="Your shop name"
                                 placeholderTextColor="#94a3b8"
                                 autoCapitalize="words"
                             />
 
-                            <Text className="mb-2 text-sm font-semibold text-slate-700">Email address</Text>
-                            <TextInput
-                                className="mb-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900"
+                            <CustomInput
+                                label="Email address"
+                                required
+                                error={errors.email}
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(value) => { setEmail(value); if (errors.email) setErrors({...errors, email: undefined}); }}
                                 placeholder="you@yourshop.com"
                                 placeholderTextColor="#94a3b8"
                                 keyboardType="email-address"
@@ -89,12 +99,13 @@ export default function RegisterScreen() {
                                 autoComplete="email"
                             />
 
-                            <Text className="mb-2 text-sm font-semibold text-slate-700">Password</Text>
-                            <TextInput
-                                className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-base text-slate-900"
+                            <CustomInput
+                                label="Password"
+                                required
+                                error={errors.password}
                                 value={password}
-                                onChangeText={setPassword}
-                                placeholder="At least 6 characters"
+                                onChangeText={(value) => { setPassword(value); if (errors.password) setErrors({...errors, password: undefined}); }}
+                                placeholder="At least 8 characters"
                                 placeholderTextColor="#94a3b8"
                                 secureTextEntry
                                 autoCapitalize="none"
