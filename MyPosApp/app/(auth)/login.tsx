@@ -23,6 +23,7 @@ export default function LoginScreen() {
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async () => {
         const nextErrors: typeof errors = {};
@@ -53,8 +54,10 @@ export default function LoginScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    nestedScrollEnabled
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="flex-1 justify-center px-6 py-10">
@@ -85,7 +88,7 @@ export default function LoginScreen() {
                             />
 
                             <View className="flex-row items-center justify-between">
-                                <Pressable onPress={() => Alert.alert('Coming soon', 'Password recovery will be available soon.')}>
+                                <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                                     <Text className="mb-2 ml-auto text-sm font-semibold text-blue-600">Forgot Password?</Text>
                                 </Pressable>
                             </View>
@@ -96,10 +99,14 @@ export default function LoginScreen() {
                                 value={password}
                                 onChangeText={(value) => { setPassword(value); if (errors.password) setErrors({...errors, password: undefined}); }}
                                 placeholder="Enter your password"
-                                placeholderTextColor="#94a3b8"
-                                secureTextEntry
+                                secureTextEntry={!showPassword}
                                 autoCapitalize="none"
                                 autoComplete="password"
+                                rightElement={
+                                    <Pressable className="px-4" onPress={() => setShowPassword((visible) => !visible)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                                        <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color="#64748b" />
+                                    </Pressable>
+                                }
                             />
 
                             <Pressable

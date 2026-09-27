@@ -23,6 +23,7 @@ interface AuthStoreState extends AuthState {
     login: (pin: string) => Promise<{ success: boolean; message?: string }>;
     loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     register: (shopName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    resetPassword: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     lock: () => void;
     logout: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
@@ -81,7 +82,7 @@ export const useAuthStore = create<AuthStoreState>()(
                     return { success: true };
                 }
 
-                if (!mockUser || password.length < 6) {
+                if (!mockUser || password.length < 8) {
                     return { success: false, message: 'Invalid email or password' };
                 }
 
@@ -94,11 +95,29 @@ export const useAuthStore = create<AuthStoreState>()(
                 return { success: true };
             },
 
+            resetPassword: async (email: string, password: string) => {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                const normalizedEmail = email.trim().toLowerCase();
+                const registeredUser = get().registeredUsers.find((candidate) => candidate.email === normalizedEmail);
+                if (!registeredUser) {
+                    return { success: false, message: 'No registered account was found for this email.' };
+                }
+                if (password.length < 8) {
+                    return { success: false, message: 'Password must be at least 8 characters.' };
+                }
+                set({
+                    registeredUsers: get().registeredUsers.map((candidate) =>
+                        candidate.email === normalizedEmail ? { ...candidate, password } : candidate
+                    ),
+                });
+                return { success: true };
+            },
+
             register: async (shopName: string, email: string, password: string) => {
                 await new Promise((resolve) => setTimeout(resolve, 800));
 
                 const normalizedEmail = email.trim().toLowerCase();
-                if (!shopName.trim() || !normalizedEmail || password.length < 6) {
+                if (!shopName.trim() || !normalizedEmail || password.length < 8) {
                     return { success: false, message: 'Please complete all fields correctly' };
                 }
 

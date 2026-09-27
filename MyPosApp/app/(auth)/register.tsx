@@ -24,6 +24,7 @@ export default function RegisterScreen() {
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<{ shopName?: string; email?: string; password?: string }>({});
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async () => {
         const nextErrors: typeof errors = {};
@@ -55,8 +56,10 @@ export default function RegisterScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1 }}
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                    nestedScrollEnabled
                     showsVerticalScrollIndicator={false}
                 >
                     <View className="flex-1 justify-center px-6 py-10">
@@ -106,10 +109,14 @@ export default function RegisterScreen() {
                                 value={password}
                                 onChangeText={(value) => { setPassword(value); if (errors.password) setErrors({...errors, password: undefined}); }}
                                 placeholder="At least 8 characters"
-                                placeholderTextColor="#94a3b8"
-                                secureTextEntry
+                                secureTextEntry={!showPassword}
                                 autoCapitalize="none"
                                 autoComplete="new-password"
+                                rightElement={
+                                    <Pressable className="px-4" onPress={() => setShowPassword((visible) => !visible)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                                        <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={21} color="#64748b" />
+                                    </Pressable>
+                                }
                             />
 
                             <Pressable

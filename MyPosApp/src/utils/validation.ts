@@ -19,8 +19,9 @@ export const validateCustomer = (values: {
     const errors: ValidationErrors<'name' | 'phone' | 'email'> = {};
     if (!values.name.trim()) errors.name = 'Customer name is required.';
     else if (values.name.trim().length < 2) errors.name = 'Enter at least 2 characters.';
+    else if (!/^[\p{L}\s.'-]+$/u.test(values.name.trim())) errors.name = 'Name can contain letters, spaces, and . \' - only.';
     if (!values.phone.trim()) errors.phone = 'Phone number is required.';
-    else if (!/^[\d\s()+-]{7,20}$/.test(values.phone.trim())) errors.phone = 'Enter a valid phone number.';
+    else if (!/^\d{7,15}$/.test(values.phone.trim())) errors.phone = 'Enter 7 to 15 digits.';
     if (values.email.trim() && !isValidEmail(values.email)) errors.email = 'Enter a valid email address.';
     return errors;
 };

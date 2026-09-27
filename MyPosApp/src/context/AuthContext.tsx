@@ -9,6 +9,7 @@ interface AuthContextValue {
     signIn: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     signInWithPin: (pin: string) => Promise<{ success: boolean; message?: string }>;
     signUp: (shopName: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+    resetPassword: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
     lock: () => void;
     signOut: () => void;
     hasPermission: (allowedRoles: UserRole[]) => boolean;
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginWithEmail,
         login,
         register,
+        resetPassword,
         lock,
         logout,
         hasPermission,
@@ -36,10 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn: loginWithEmail,
         signInWithPin: login,
         signUp: register,
+        resetPassword,
         lock,
         signOut: logout,
         hasPermission,
-    }), [activeRole, hasHydrated, hasPermission, isAuthenticated, lock, login, loginWithEmail, logout, register]);
+    }), [activeRole, hasHydrated, hasPermission, isAuthenticated, lock, login, loginWithEmail, logout, register, resetPassword]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

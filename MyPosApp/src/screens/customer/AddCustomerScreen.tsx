@@ -31,7 +31,7 @@ const AddCustomerScreen = () => {
                     <CustomInput label="Customer name" required error={errors.name} placeholder="Enter full name" value={name}
                         onChangeText={(value) => {setName(value); if (errors.name) setErrors({...errors, name: undefined});}} />
                     <CustomInput label="Phone number" required error={errors.phone} placeholder="Enter phone number" value={phone}
-                        onChangeText={(value) => {setPhone(value); if (errors.phone) setErrors({...errors, phone: undefined});}} keyboardType="phone-pad" />
+                        onChangeText={(value) => {setPhone(value.replace(/\D/g, '').slice(0, 15)); if (errors.phone) setErrors({...errors, phone: undefined});}} keyboardType="number-pad" />
                     <CustomInput label="Email" error={errors.email} placeholder="Enter email address" value={email}
                         onChangeText={(value) => {setEmail(value); if (errors.email) setErrors({...errors, email: undefined});}} keyboardType="email-address" autoCapitalize="none" />
                     <CustomInput label="Address" placeholder="Enter full address" value={address} onChangeText={setAddress}
